@@ -2,10 +2,11 @@
 
 namespace App\Modules\Documents\Controllers;
 
-use App\Controllers\BaseController;
 use App\Modules\Documents\Services\DocumentService;
 
-class DocumentController extends BaseController
+use CodeIgniter\RESTful\ResourceController;
+
+class DocumentController extends ResourceController
 {
     protected DocumentService $documentService;
 
@@ -18,7 +19,10 @@ class DocumentController extends BaseController
     {
         $documents = $this->documentService->getAll();
 
-        return $this->respondWithCollection($documents);
+        return $this->respond([
+            'status' => 'success',
+            'data' => $documents,
+        ]);
     }
 
     public function show($id = null)
@@ -26,10 +30,13 @@ class DocumentController extends BaseController
         $document = $this->documentService->findById($id);
 
         if (!$document) {
-            return $this->respondNotFound('Document not found');
+            return $this->failNotFound('Document not found');
         }
 
-        return $this->respondSuccess($document);
+        return $this->respond([
+            'status' => 'success',
+            'data' => $document,
+        ]);
     }
 
     public function create()
@@ -39,12 +46,16 @@ class DocumentController extends BaseController
         $validation = $this->documentService->validate($data);
 
         if (!$validation['valid']) {
-            return $this->respondValidationError($validation['errors']);
+            return $this->failValidationErrors($validation['errors']);
         }
 
         $document = $this->documentService->create($data);
 
-        return $this->respondCreated($document, 'Document created successfully');
+        return $this->respondCreated([
+            'status' => 'success',
+            'message' => 'Document created successfully',
+            'data' => $document,
+        ]);
     }
 
     public function update($id = null)
@@ -54,18 +65,22 @@ class DocumentController extends BaseController
         $document = $this->documentService->findById($id);
 
         if (!$document) {
-            return $this->respondNotFound('Document not found');
+            return $this->failNotFound('Document not found');
         }
 
         $validation = $this->documentService->validate($data, $id);
 
         if (!$validation['valid']) {
-            return $this->respondValidationError($validation['errors']);
+            return $this->failValidationErrors($validation['errors']);
         }
 
         $updated = $this->documentService->update($id, $data);
 
-        return $this->respondUpdated($updated, 'Document updated successfully');
+        return $this->respond([
+            'status' => 'success',
+            'message' => 'Document updated successfully',
+            'data' => $updated,
+        ]);
     }
 
     public function delete($id = null)
@@ -73,11 +88,14 @@ class DocumentController extends BaseController
         $document = $this->documentService->findById($id);
 
         if (!$document) {
-            return $this->respondNotFound('Document not found');
+            return $this->failNotFound('Document not found');
         }
 
         $this->documentService->delete($id);
 
-        return $this->respondDeleted('Document deleted successfully');
+        return $this->respondDeleted([
+            'status' => 'success',
+            'message' => 'Document deleted successfully',
+        ]);
     }
 }

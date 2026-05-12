@@ -3,13 +3,13 @@
 namespace App\Modules\Entities\Models;
 
 use CodeIgniter\Model;
-use App\Modules\Entities\Entities\Entity;
+use App\Modules\Entities\Entities\EntityData;
 
 class EntityModel extends Model
 {
     protected $table = 'entities';
     protected $primaryKey = 'id';
-    protected $returnType = Entity::class;
+    protected $returnType = EntityData::class;
     protected $useSoftDeletes = true;
 
     protected $allowedFields = [

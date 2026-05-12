@@ -2,10 +2,10 @@
 
 namespace App\Modules\History\Controllers;
 
-use App\Controllers\BaseController;
+use CodeIgniter\RESTful\ResourceController;
 use App\Modules\History\Services\HistoryService;
 
-class HistoryController extends BaseController
+class HistoryController extends ResourceController
 {
     protected HistoryService $historyService;
 
@@ -17,8 +17,11 @@ class HistoryController extends BaseController
     public function index()
     {
         $histories = $this->historyService->getAll();
-
-        return $this->respondWithCollection($histories);
+        return $this->respond([
+            'status' => 'success',
+            'message' => 'Historial obtenido correctamente',
+            'data' => $histories,
+        ]);
     }
 
     public function show($id = null)
@@ -26,25 +29,31 @@ class HistoryController extends BaseController
         $history = $this->historyService->findById($id);
 
         if (!$history) {
-            return $this->respondNotFound('History not found');
+            return $this->failNotFound('Historial no encontrado');
         }
 
-        return $this->respondSuccess($history);
+        return $this->respond([
+            'status' => 'success',
+            'message' => 'Historial encontrado',
+            'data' => $history,
+        ]);
     }
 
     public function create()
     {
         $data = $this->request->getJSON(true);
-
         $validation = $this->historyService->validate($data);
 
         if (!$validation['valid']) {
-            return $this->respondValidationError($validation['errors']);
+            return $this->failValidationErrors($validation['errors']);
         }
 
         $history = $this->historyService->create($data);
-
-        return $this->respondCreated($history, 'History created successfully');
+        return $this->respondCreated([
+            'status' => 'success',
+            'message' => 'Historial creado correctamente',
+            'data' => $history,
+        ]);
     }
 
     public function delete($id = null)
@@ -52,11 +61,13 @@ class HistoryController extends BaseController
         $history = $this->historyService->findById($id);
 
         if (!$history) {
-            return $this->respondNotFound('History not found');
+            return $this->failNotFound('Historial no encontrado');
         }
 
         $this->historyService->delete($id);
-
-        return $this->respondDeleted('History deleted successfully');
+        return $this->respondDeleted([
+            'status' => 'success',
+            'message' => 'Historial eliminado correctamente',
+        ]);
     }
 }

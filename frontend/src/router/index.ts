@@ -9,7 +9,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: '',
         name: 'dashboard',
-        component: () => import('@/views/DashboardView.vue'),
+        component: () => import('@/views/BucleView.vue'),
         meta: { title: 'Panel' },
       },
       {
@@ -57,9 +57,8 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach((to) => {
   document.title = `${to.meta.title || 'App'} | Bucle`
-  next()
 })
 
 export default router

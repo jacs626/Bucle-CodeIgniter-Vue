@@ -114,34 +114,36 @@ MVP Bucle - CodeIgniter&Vue/
 - [x] CategoriesView.vue
 - [x] Toast notifications
 
-#### 3.2 Entities (Parcial)
+#### 3.2 Entities (Completado ✓)
 - [x] Types
 - [x] Store Pinia
-- [ ] API endpoints
-- [ ] Composable useEntities
-- [ ] Components
-- [ ] EntitiesView.vue
+- [x] API endpoints
+- [x] EntitiesView.vue
 
 #### 3.3 Blocks (Completado ✓)
 - [x] Types
 - [x] API endpoints
 - [x] Composable useBlocks
 - [x] Store Pinia
-- [x] BlocksView.vue
 
 #### 3.4 History (Completado ✓)
 - [x] Types
 - [x] API endpoints
 - [x] Composable useHistory
 - [x] Store Pinia
-- [x] HistoryView.vue
 
 #### 3.5 Documents (Completado ✓)
 - [x] Types
 - [x] API endpoints
 - [x] Composable useDocuments
 - [x] Store Pinia
-- [x] DocumentsView.vue
+
+#### 3.6 Vista Unificada BucleView (Completado ✓)
+- [x] EntitySelector component
+- [x] CRUDPanel component (Category, Entity, Block forms)
+- [x] BlockCard component
+- [x] StatusBadge component
+- [x] BucleView.vue - Vista principal unificada
 
 ### Fase 4: Características Avanzadas (Parcial)
 

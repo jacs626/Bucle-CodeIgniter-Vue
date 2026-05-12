@@ -3,7 +3,7 @@
 namespace App\Modules\Entities\Services;
 
 use App\Modules\Entities\Models\EntityModel;
-use App\Modules\Entities\Entities\Entity;
+use App\Modules\Entities\Entities\EntityData;
 use App\Modules\Entities\Transformers\EntityTransformer;
 use CodeIgniter\Database\Exceptions\DatabaseException;
 
@@ -42,7 +42,7 @@ class EntityService
 
     public function create(array $data): array
     {
-        $entity = new Entity($data);
+        $entity = new EntityData($data);
 
         $id = $this->entityModel->insert($entity);
 
@@ -55,7 +55,7 @@ class EntityService
 
     public function update(int $id, array $data): array
     {
-        $entity = new Entity($data);
+        $entity = new EntityData($data);
         $entity->id = $id;
 
         $this->entityModel->update($id, $entity);

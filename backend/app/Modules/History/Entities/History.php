@@ -6,15 +6,6 @@ use CodeIgniter\Entity\Entity;
 
 class History extends Entity
 {
-    protected $casts = [
-        'id' => 'integer',
-        'entity_id' => '?integer',
-        'block_id' => '?integer',
-        'date' => 'datetime',
-        'status' => 'string',
-        'note' => 'array',
-    ];
-
     protected $datamap = [
         'id' => 'id',
         'entity_id' => 'entity_id',

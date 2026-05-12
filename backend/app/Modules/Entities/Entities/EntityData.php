@@ -4,18 +4,8 @@ namespace App\Modules\Entities\Entities;
 
 use CodeIgniter\Entity\Entity;
 
-class Entity extends Entity
+class EntityData extends Entity
 {
-    protected $casts = [
-        'id' => 'integer',
-        'name' => 'string',
-        'description' => '?string',
-        'type' => 'string',
-        'category_id' => '?integer',
-        'metadata' => 'array',
-        'is_active' => 'boolean',
-    ];
-
     protected $datamap = [
         'id' => 'id',
         'name' => 'name',

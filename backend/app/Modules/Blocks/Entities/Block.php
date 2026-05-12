@@ -6,18 +6,6 @@ use CodeIgniter\Entity\Entity;
 
 class Block extends Entity
 {
-    protected $casts = [
-        'id' => 'integer',
-        'name' => 'string',
-        'type' => 'string',
-        'data' => 'array',
-        'schedule' => 'array',
-        'entity_id' => '?integer',
-        'parent_block_id' => '?integer',
-        'order_index' => 'integer',
-        'is_active' => 'boolean',
-    ];
-
     protected $datamap = [
         'id' => 'id',
         'entity_id' => 'entity_id',
