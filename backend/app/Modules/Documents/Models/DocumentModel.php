@@ -13,26 +13,16 @@ class DocumentModel extends Model
     protected $useSoftDeletes = true;
 
     protected $allowedFields = [
-        'title',
-        'content',
-        'file_path',
-        'file_type',
-        'file_size',
         'entity_id',
-        'is_published',
+        'title',
+        'url',
+        'type',
     ];
 
     protected $useTimestamps = true;
     protected $createdField = 'created_at';
     protected $updatedField = 'updated_at';
     protected $deletedField = 'deleted_at';
-
-    protected $casts = [
-        'id' => 'integer',
-        'entity_id' => '?integer',
-        'file_size' => 'integer',
-        'is_published' => 'boolean',
-    ];
 
     protected $validationRules = [
         'title' => 'required|string|max_length[255]',

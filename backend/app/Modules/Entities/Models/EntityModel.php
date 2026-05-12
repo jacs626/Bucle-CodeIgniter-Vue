@@ -13,10 +13,10 @@ class EntityModel extends Model
     protected $useSoftDeletes = true;
 
     protected $allowedFields = [
+        'category_id',
         'name',
         'description',
         'type',
-        'category_id',
         'metadata',
         'is_active',
     ];
@@ -26,17 +26,16 @@ class EntityModel extends Model
     protected $updatedField = 'updated_at';
     protected $deletedField = 'deleted_at';
 
-    protected $casts = [
-        'id' => 'integer',
-        'category_id' => '?integer',
-        'metadata' => 'array',
-        'is_active' => 'boolean',
-    ];
-
     protected $validationRules = [
         'name' => 'required|string|max_length[255]',
     ];
 
     protected $skipValidation = false;
     protected $cleanValidationRules = true;
+
+    public function getWithCategory()
+    {
+        return $this->select('entities.*, categories.name as category_name, categories.icon as category_icon')
+            ->join('categories', 'categories.id = entities.category_id', 'left');
+    }
 }

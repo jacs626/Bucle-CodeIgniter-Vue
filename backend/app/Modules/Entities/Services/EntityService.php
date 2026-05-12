@@ -73,20 +73,25 @@ class EntityService
         $errors = [];
 
         if (empty($data['name'])) {
-            $errors['name'] = 'Name is required';
+            $errors['name'] = 'El nombre es requerido';
+        } elseif (strlen($data['name']) > 255) {
+            $errors['name'] = 'El nombre debe tener menos de 255 caracteres';
         }
 
-        if (isset($data['name']) && strlen($data['name']) > 255) {
-            $errors['name'] = 'Name must be less than 255 characters';
-        }
-
-        if (isset($data['description']) && strlen($data['description']) > 1000) {
-            $errors['description'] = 'Description must be less than 1000 characters';
+        if (isset($data['type']) && strlen($data['type']) > 100) {
+            $errors['type'] = 'El tipo debe tener menos de 100 caracteres';
         }
 
         return [
             'valid' => empty($errors),
             'errors' => $errors,
         ];
+    }
+
+    public function getAllWithCategory(): array
+    {
+        $entities = $this->entityModel->getWithCategory()->findAll();
+
+        return $this->transformer->transformCollection($entities);
     }
 }

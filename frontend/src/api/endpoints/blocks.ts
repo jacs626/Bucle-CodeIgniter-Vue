@@ -6,6 +6,8 @@ export const blocksApi = {
 
   getById: (id: number) => get<Block>(`blocks/${id}`),
 
+  getByEntityId: (entityId: number) => get<Block[]>(`blocks/entity/${entityId}`),
+
   create: (data: Partial<Block>) =>
     post<Block>('blocks', data),
 

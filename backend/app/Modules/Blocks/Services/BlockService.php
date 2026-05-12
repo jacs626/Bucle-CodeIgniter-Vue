@@ -40,6 +40,13 @@ class BlockService
         return $this->transformer->transform($block);
     }
 
+    public function getByEntityId(int $entityId): array
+    {
+        $blocks = $this->blockModel->where('entity_id', $entityId)->findAll();
+
+        return $this->transformer->transformCollection($blocks);
+    }
+
     public function create(array $data): array
     {
         $block = new Block($data);
@@ -73,15 +80,20 @@ class BlockService
         $errors = [];
 
         if (empty($data['name'])) {
-            $errors['name'] = 'Name is required';
-        }
-
-        if (isset($data['name']) && strlen($data['name']) > 255) {
-            $errors['name'] = 'Name must be less than 255 characters';
+            $errors['name'] = 'El nombre es requerido';
+        } elseif (strlen($data['name']) > 255) {
+            $errors['name'] = 'El nombre debe tener menos de 255 caracteres';
         }
 
         if (empty($data['type'])) {
-            $errors['type'] = 'Type is required';
+            $errors['type'] = 'El tipo es requerido';
+        } elseif (strlen($data['type']) > 50) {
+            $errors['type'] = 'El tipo debe tener menos de 50 caracteres';
+        }
+
+        $validTypes = ['task', 'reminder', 'payment', 'step', 'note', 'workflow'];
+        if (!empty($data['type']) && !in_array($data['type'], $validTypes)) {
+            $errors['type'] = 'Tipo de block inválido';
         }
 
         return [

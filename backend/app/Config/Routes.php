@@ -36,6 +36,7 @@ $routes->group('api', ['namespace' => 'App\Modules\Entities\Controllers'], funct
 $routes->group('api', ['namespace' => 'App\Modules\Blocks\Controllers'], function ($routes) {
     $routes->get('blocks', 'BlockController::index');
     $routes->get('blocks/(:num)', 'BlockController::show/$1');
+    $routes->get('blocks/entity/(:num)', 'BlockController::getByEntity/$1');
     $routes->post('blocks', 'BlockController::create');
     $routes->put('blocks/(:num)', 'BlockController::update/$1');
     $routes->delete('blocks/(:num)', 'BlockController::delete/$1');

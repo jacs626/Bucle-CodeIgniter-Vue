@@ -2,82 +2,101 @@
 
 namespace App\Modules\Entities\Controllers;
 
-use App\Controllers\BaseController;
 use App\Modules\Entities\Services\EntityService;
+use CodeIgniter\RESTful\ResourceController;
 
-class EntityController extends BaseController
+class EntityController extends ResourceController
 {
-    protected EntityService $entityService;
+    protected EntityService $service;
 
     public function __construct()
     {
-        $this->entityService = new EntityService();
+        $this->service = new EntityService();
     }
 
     public function index()
     {
-        $entities = $this->entityService->getAll();
+        $entities = $this->service->getAll();
 
-        return $this->respondWithCollection($entities);
+        return $this->respond([
+            'status' => 'success',
+            'message' => 'Entidades obtenidas correctamente',
+            'data' => $entities,
+        ]);
     }
 
     public function show($id = null)
     {
-        $entity = $this->entityService->findById($id);
+        $entity = $this->service->findById((int) $id);
 
         if (!$entity) {
-            return $this->respondNotFound('Entity not found');
+            return $this->failNotFound('Entidad no encontrada');
         }
 
-        return $this->respondSuccess($entity);
+        return $this->respond([
+            'status' => 'success',
+            'message' => 'Entidad encontrada',
+            'data' => $entity,
+        ]);
     }
 
     public function create()
     {
         $data = $this->request->getJSON(true);
 
-        $validation = $this->entityService->validate($data);
+        $validation = $this->service->validate($data);
 
         if (!$validation['valid']) {
-            return $this->respondValidationError($validation['errors']);
+            return $this->failValidationErrors($validation['errors']);
         }
 
-        $entity = $this->entityService->create($data);
+        $entity = $this->service->create($data);
 
-        return $this->respondCreated($entity, 'Entity created successfully');
+        return $this->respondCreated([
+            'status' => 'success',
+            'message' => 'Entidad creada correctamente',
+            'data' => $entity,
+        ]);
     }
 
     public function update($id = null)
     {
         $data = $this->request->getJSON(true);
 
-        $entity = $this->entityService->findById($id);
+        $entity = $this->service->findById((int) $id);
 
         if (!$entity) {
-            return $this->respondNotFound('Entity not found');
+            return $this->failNotFound('Entidad no encontrada');
         }
 
-        $validation = $this->entityService->validate($data, $id);
+        $validation = $this->service->validate($data);
 
         if (!$validation['valid']) {
-            return $this->respondValidationError($validation['errors']);
+            return $this->failValidationErrors($validation['errors']);
         }
 
-        $updated = $this->entityService->update($id, $data);
+        $updated = $this->service->update((int) $id, $data);
 
-        return $this->respondUpdated($updated, 'Entity updated successfully');
+        return $this->respond([
+            'status' => 'success',
+            'message' => 'Entidad actualizada correctamente',
+            'data' => $updated,
+        ]);
     }
 
     public function delete($id = null)
     {
-        $entity = $this->entityService->findById($id);
+        $entity = $this->service->findById((int) $id);
 
         if (!$entity) {
-            return $this->respondNotFound('Entity not found');
+            return $this->failNotFound('Entidad no encontrada');
         }
 
-        $this->entityService->delete($id);
+        $this->service->delete((int) $id);
 
-        return $this->respondDeleted('Entity deleted successfully');
+        return $this->respondDeleted([
+            'status' => 'success',
+            'message' => 'Entidad eliminada correctamente',
+        ]);
     }
 }

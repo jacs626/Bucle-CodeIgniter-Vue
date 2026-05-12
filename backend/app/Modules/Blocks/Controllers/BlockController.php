@@ -2,82 +2,112 @@
 
 namespace App\Modules\Blocks\Controllers;
 
-use App\Controllers\BaseController;
 use App\Modules\Blocks\Services\BlockService;
+use CodeIgniter\RESTful\ResourceController;
 
-class BlockController extends BaseController
+class BlockController extends ResourceController
 {
-    protected BlockService $blockService;
+    protected BlockService $service;
 
     public function __construct()
     {
-        $this->blockService = new BlockService();
+        $this->service = new BlockService();
     }
 
     public function index()
     {
-        $blocks = $this->blockService->getAll();
+        $blocks = $this->service->getAll();
 
-        return $this->respondWithCollection($blocks);
+        return $this->respond([
+            'status' => 'success',
+            'message' => 'Blocks obtenidos correctamente',
+            'data' => $blocks,
+        ]);
     }
 
     public function show($id = null)
     {
-        $block = $this->blockService->findById($id);
+        $block = $this->service->findById((int) $id);
 
         if (!$block) {
-            return $this->respondNotFound('Block not found');
+            return $this->failNotFound('Block no encontrado');
         }
 
-        return $this->respondSuccess($block);
+        return $this->respond([
+            'status' => 'success',
+            'message' => 'Block encontrado',
+            'data' => $block,
+        ]);
+    }
+
+    public function getByEntity($entityId = null)
+    {
+        $blocks = $this->service->getByEntityId((int) $entityId);
+
+        return $this->respond([
+            'status' => 'success',
+            'message' => 'Blocks de entidad obtenidos correctamente',
+            'data' => $blocks,
+        ]);
     }
 
     public function create()
     {
         $data = $this->request->getJSON(true);
 
-        $validation = $this->blockService->validate($data);
+        $validation = $this->service->validate($data);
 
         if (!$validation['valid']) {
-            return $this->respondValidationError($validation['errors']);
+            return $this->failValidationErrors($validation['errors']);
         }
 
-        $block = $this->blockService->create($data);
+        $block = $this->service->create($data);
 
-        return $this->respondCreated($block, 'Block created successfully');
+        return $this->respondCreated([
+            'status' => 'success',
+            'message' => 'Block creado correctamente',
+            'data' => $block,
+        ]);
     }
 
     public function update($id = null)
     {
         $data = $this->request->getJSON(true);
 
-        $block = $this->blockService->findById($id);
+        $block = $this->service->findById((int) $id);
 
         if (!$block) {
-            return $this->respondNotFound('Block not found');
+            return $this->failNotFound('Block no encontrado');
         }
 
-        $validation = $this->blockService->validate($data, $id);
+        $validation = $this->service->validate($data);
 
         if (!$validation['valid']) {
-            return $this->respondValidationError($validation['errors']);
+            return $this->failValidationErrors($validation['errors']);
         }
 
-        $updated = $this->blockService->update($id, $data);
+        $updated = $this->service->update((int) $id, $data);
 
-        return $this->respondUpdated($updated, 'Block updated successfully');
+        return $this->respond([
+            'status' => 'success',
+            'message' => 'Block actualizado correctamente',
+            'data' => $updated,
+        ]);
     }
 
     public function delete($id = null)
     {
-        $block = $this->blockService->findById($id);
+        $block = $this->service->findById((int) $id);
 
         if (!$block) {
-            return $this->respondNotFound('Block not found');
+            return $this->failNotFound('Block no encontrado');
         }
 
-        $this->blockService->delete($id);
+        $this->service->delete((int) $id);
 
-        return $this->respondDeleted('Block deleted successfully');
+        return $this->respondDeleted([
+            'status' => 'success',
+            'message' => 'Block eliminado correctamente',
+        ]);
     }
 }

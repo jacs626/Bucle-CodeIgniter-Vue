@@ -20,11 +20,13 @@ export interface Entity {
 
 export interface Block {
   id: number;
+  entity_id: number | null;
   name: string;
   type: string;
-  content: Record<string, unknown> | null;
-  entity_id: number | null;
-  order: number;
+  data: Record<string, unknown> | null;
+  schedule: Record<string, unknown> | null;
+  parent_block_id: number | null;
+  order_index: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -32,24 +34,21 @@ export interface Block {
 
 export interface History {
   id: number;
-  entity_type: string;
-  entity_id: number;
-  action: string;
-  changes: Record<string, unknown> | null;
-  user_id: number | null;
+  entity_id: number | null;
+  block_id: number | null;
+  date: string | null;
+  status: string | null;
+  note: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface Document {
   id: number;
-  title: string;
-  content: string | null;
-  file_path: string | null;
-  file_type: string | null;
-  file_size: number;
   entity_id: number | null;
-  is_published: boolean;
+  title: string;
+  url: string | null;
+  type: string | null;
   created_at: string;
   updated_at: string;
 }

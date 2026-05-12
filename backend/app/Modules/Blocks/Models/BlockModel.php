@@ -13,11 +13,13 @@ class BlockModel extends Model
     protected $useSoftDeletes = true;
 
     protected $allowedFields = [
+        'entity_id',
         'name',
         'type',
-        'content',
-        'entity_id',
-        'order',
+        'data',
+        'schedule',
+        'parent_block_id',
+        'order_index',
         'is_active',
     ];
 
@@ -25,14 +27,6 @@ class BlockModel extends Model
     protected $createdField = 'created_at';
     protected $updatedField = 'updated_at';
     protected $deletedField = 'deleted_at';
-
-    protected $casts = [
-        'id' => 'integer',
-        'entity_id' => '?integer',
-        'content' => 'array',
-        'order' => 'integer',
-        'is_active' => 'boolean',
-    ];
 
     protected $validationRules = [
         'name' => 'required|string|max_length[255]',

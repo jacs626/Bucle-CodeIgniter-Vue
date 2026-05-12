@@ -66,85 +66,86 @@ MVP Bucle - CodeIgniter&Vue/
 - [x] Transformer
 - [x] Rutas API
 
-#### 2.2 Entities (Pendiente)
-- [ ] Migration: entities
-- [ ] Entity
-- [ ] Model
-- [ ] Service
-- [ ] Controller
-- [ ] Transformer
-- [ ] Rutas API
+#### 2.2 Entities (Completado ✓)
+- [x] Migration: entities
+- [x] Entity
+- [x] Model
+- [x] Service
+- [x] Controller
+- [x] Transformer
+- [x] Rutas API
 
-#### 2.3 Blocks (Pendiente)
-- [ ] Migration: blocks
-- [ ] Entity
-- [ ] Model
-- [ ] Service
-- [ ] Controller
-- [ ] Transformer
-- [ ] Rutas API
-- [ ] Tipos de blocks: task, reminder, payment, step, note, workflow
+#### 2.3 Blocks (Completado ✓)
+- [x] Migration: blocks (2026-05-12-000003_CreateBlocksTable.php)
+- [x] Entity
+- [x] Model
+- [x] Service
+- [x] Controller
+- [x] Transformer
+- [x] Rutas API
+- Tipos de blocks: task, reminder, payment, step, note, workflow
 
-#### 2.4 History (Pendiente)
-- [ ] Migration: history
-- [ ] Entity
-- [ ] Model
-- [ ] Service
-- [ ] Controller
-- [ ] Transformer
-- [ ] Rutas API
+#### 2.4 History (Completado ✓)
+- [x] Migration: history (2026-05-12-000004_CreateHistoryTable.php)
+- [x] Entity
+- [x] Model
+- [x] Service
+- [x] Controller
+- [x] Transformer
+- [x] Rutas API
 
-#### 2.5 Documents (Pendiente)
-- [ ] Migration: documents
-- [ ] Entity
-- [ ] Model
-- [ ] Service
-- [ ] Controller
-- [ ] Transformer
-- [ ] Rutas API
+#### 2.5 Documents (Completado ✓)
+- [x] Migration: documents (2026-05-12-000005_CreateDocumentsTable.php)
+- [x] Entity
+- [x] Model
+- [x] Service
+- [x] Controller
+- [x] Transformer
+- [x] Rutas API
 
 ### Fase 3: Migrar Módulos Frontend
 
 #### 3.1 Categories (Completado ✓)
-- [x] Types (Category)
+- [x] Types
 - [x] API endpoints
 - [x] Composable useCategories
 - [x] Store Pinia
-- [x] CategoryList.vue
-- [x] CategoryForm.vue
+- [x] Components (CategoryList, CategoryForm)
 - [x] CategoriesView.vue
 - [x] Toast notifications
 
-#### 3.2 Entities (Pendiente)
-- [ ] Types
+#### 3.2 Entities (Parcial)
+- [x] Types
+- [x] Store Pinia
 - [ ] API endpoints
 - [ ] Composable useEntities
-- [ ] Store Pinia
+- [ ] Components
 - [ ] EntitiesView.vue
 
-#### 3.3 Blocks (Pendiente)
-- [ ] Types
-- [ ] API endpoints
-- [ ] Composable useBlocks
-- [ ] Store Pinia
-- [ ] BlocksView.vue
+#### 3.3 Blocks (Completado ✓)
+- [x] Types
+- [x] API endpoints
+- [x] Composable useBlocks
+- [x] Store Pinia
+- [x] BlocksView.vue
 
-#### 3.4 History (Pendiente)
-- [ ] Types
-- [ ] API endpoints
-- [ ] Composable useHistory
-- [ ] Store Pinia
-- [ ] HistoryView.vue
+#### 3.4 History (Completado ✓)
+- [x] Types
+- [x] API endpoints
+- [x] Composable useHistory
+- [x] Store Pinia
+- [x] HistoryView.vue
 
-#### 3.5 Documents (Pendiente)
-- [ ] Types
-- [ ] API endpoints
-- [ ] Composable useDocuments
-- [ ] Store Pinia
-- [ ] DocumentsView.vue
+#### 3.5 Documents (Completado ✓)
+- [x] Types
+- [x] API endpoints
+- [x] Composable useDocuments
+- [x] Store Pinia
+- [x] DocumentsView.vue
 
-### Fase 4: Características Avanzadas (Pendiente)
+### Fase 4: Características Avanzadas (Parcial)
 
+- [x] Seed de datos iniciales (BucleSeeder)
 - [ ] Upload de archivos
 - [ ] Autenticación (JWT)
 - [ ] Websockets (notificaciones tiempo real)
