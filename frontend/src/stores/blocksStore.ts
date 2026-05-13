@@ -1,18 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { blocksApi } from '@/api'
-import type { Block } from '@/types'
-
-interface BlockFormData {
-  entity_id: number | null
-  name: string
-  type: string
-  data?: Record<string, unknown>
-  schedule?: Record<string, unknown>
-  parent_block_id?: number | null
-  order_index?: number
-  is_active?: boolean
-}
+import type { Block, BlockFormData } from '@/types'
 
 export const useBlocksStore = defineStore('blocks', () => {
   const blocks = ref<Block[]>([])
@@ -78,7 +67,7 @@ export const useBlocksStore = defineStore('blocks', () => {
 
     try {
       const response = await blocksApi.create(data)
-      const created = response.data.data
+      const created = response.data.data!
       blocks.value.push(created)
       return created
     } catch (e) {
@@ -96,7 +85,7 @@ export const useBlocksStore = defineStore('blocks', () => {
 
     try {
       const response = await blocksApi.update(id, data)
-      const updated = response.data.data
+      const updated = response.data.data!
 
       const index = blocks.value.findIndex((b) => b.id === id)
       if (index !== -1) {

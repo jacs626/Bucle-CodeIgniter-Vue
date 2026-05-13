@@ -66,7 +66,7 @@ export function useDocuments() {
 
     try {
       const response = await documentsApi.create(data)
-      const created = response.data.data
+      const created = response.data.data!
       documents.value.push(created)
       showToast('Documento creado correctamente', 'success')
       return created
@@ -86,7 +86,7 @@ export function useDocuments() {
 
     try {
       const response = await documentsApi.update(id, data)
-      const updated = response.data.data
+      const updated = response.data.data!
 
       const index = documents.value.findIndex((d) => d.id === id)
       if (index !== -1) {

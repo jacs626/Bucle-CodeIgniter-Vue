@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Block } from '@/types'
+import { getTimeUntilNextExecution, formatTimeRemaining, toDate } from '@/types'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 
 interface Props {
@@ -33,23 +34,57 @@ const typeColors: Record<string, { bg: string; text: string; border: string }> =
   note: { bg: 'bg-yellow-50 dark:bg-yellow-900/30', text: 'text-yellow-700 dark:text-yellow-400', border: 'border-yellow-200 dark:border-yellow-800' },
 }
 
+const defaultColors = typeColors.task!
+
+const blockColors = computed(() => {
+  return typeColors[props.block.type] ?? defaultColors
+})
+
 const scheduleInfo = computed(() => {
   if (!props.block.schedule) return null
-  const schedule = props.block.schedule as Record<string, unknown>
-  if (schedule.date) {
-    const date = new Date(schedule.date as string)
-    const day = date.getDate()
-    const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
-    return { text: `${day} ${months[date.getMonth()]}`, type: 'date' }
-  }
-  if (schedule.time) {
-    return { text: `A las ${schedule.time}`, type: 'time' }
+  const timeRemaining = getTimeUntilNextExecution(props.block.schedule)
+  if (!timeRemaining) return null
+
+  const { days, hours, minutes } = timeRemaining
+  const remainingText = timeRemaining.nextExecution
+    ? ` (${formatTimeRemaining(days, hours, minutes)})`
+    : ''
+
+  switch (props.block.schedule.type) {
+    case 'fixed':
+      if (props.block.schedule.date) {
+        const date = toDate(props.block.schedule.date)
+        if (date) {
+          const day = date.getDate()
+          const months = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+          return { text: `${day} ${months[date.getMonth()]}${remainingText}`, type: 'date' }
+        }
+      }
+      if (props.block.schedule.time) {
+        return { text: `A las ${props.block.schedule.time}${remainingText}`, type: 'time' }
+      }
+      break
+    case 'interval':
+      if (props.block.schedule.intervalHours) {
+        return { text: `Cada ${props.block.schedule.intervalHours}h${remainingText}`, type: 'interval' }
+      }
+      break
+    case 'weekly':
+      if (props.block.schedule.daysOfWeek?.length && props.block.schedule.time) {
+        const dayMap: Record<string, string> = {
+          sunday: 'Dom', monday: 'Lun', tuesday: 'Mar', wednesday: 'Mié',
+          thursday: 'Jue', friday: 'Vie', saturday: 'Sáb',
+        }
+        const days = props.block.schedule.daysOfWeek.map(d => dayMap[d] || d).join(', ')
+        return { text: `${days} ${props.block.schedule.time}${remainingText}`, type: 'weekly' }
+      }
+      break
   }
   return null
 })
 
 const blockStatus = computed(() => {
-  return props.block.is_active ? 'pending' : 'done'
+  return props.block.status === 'done' ? 'done' : 'pending'
 })
 </script>
 
@@ -85,7 +120,7 @@ const blockStatus = computed(() => {
       <div class="flex items-center gap-2">
         <span
           class="px-2.5 py-1 text-xs font-semibold rounded-lg border"
-          :class="[typeColors[block.type]?.bg || typeColors.task.bg, typeColors[block.type]?.text || typeColors.task.text, typeColors[block.type]?.border || typeColors.task.border]"
+          :class="[blockColors.bg, blockColors.text, blockColors.border]"
         >
           {{ typeLabels[block.type] || block.type }}
         </span>

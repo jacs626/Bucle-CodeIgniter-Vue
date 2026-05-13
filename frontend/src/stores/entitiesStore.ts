@@ -60,7 +60,7 @@ export const useEntitiesStore = defineStore('entities', () => {
 
     try {
       const response = await entitiesApi.create(data)
-      const created = response.data.data
+      const created = response.data.data!
       entities.value.push(created)
       return created
     } catch (e) {
@@ -78,7 +78,7 @@ export const useEntitiesStore = defineStore('entities', () => {
 
     try {
       const response = await entitiesApi.update(id, data)
-      const updated = response.data.data
+      const updated = response.data.data!
 
       const index = entities.value.findIndex((e) => e.id === id)
       if (index !== -1) {

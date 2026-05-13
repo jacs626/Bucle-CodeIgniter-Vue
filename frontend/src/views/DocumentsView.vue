@@ -53,7 +53,7 @@ const formatFileSize = (bytes: number): string => {
             <h3>{{ doc.title }}</h3>
             <div class="document-meta">
               <span>{{ doc.file_type || 'Unknown' }}</span>
-              <span>{{ formatFileSize(doc.file_size) }}</span>
+              <span>{{ doc.file_size ? formatFileSize(doc.file_size) : '' }}</span>
             </div>
           </div>
           <span :class="['status', doc.is_published ? 'published' : 'draft']">

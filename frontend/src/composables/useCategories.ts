@@ -64,7 +64,7 @@ export function useCategories() {
 
     try {
       const response = await categoriesApi.create(data)
-      const created = response.data.data
+      const created = response.data.data!
       categories.value.push(created)
       showToast('Categoría creada correctamente', 'success')
       return created
@@ -84,7 +84,7 @@ export function useCategories() {
 
     try {
       const response = await categoriesApi.update(id, data)
-      const updated = response.data.data
+      const updated = response.data.data!
 
       const index = categories.value.findIndex((c) => c.id === id)
       if (index !== -1) {

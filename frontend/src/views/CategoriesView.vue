@@ -20,7 +20,7 @@ const categoryToDelete = ref<Category | null>(null)
 const loadCategories = async () => {
   try {
     await categoriesStore.fetchCategories()
-  } catch (e) {
+  } catch {
     showToast('Error al cargar las categorías', 'error')
   }
 }
@@ -50,7 +50,7 @@ const handleConfirmDelete = async () => {
   try {
     await categoriesStore.deleteCategory(categoryToDelete.value.id)
     showToast('Categoría eliminada correctamente', 'success')
-  } catch (e) {
+  } catch {
     showToast('Error al eliminar la categoría', 'error')
   } finally {
     showDeleteConfirm.value = false
@@ -76,7 +76,7 @@ const handleSubmit = async (data: CategoryFormData) => {
       showToast('Categoría actualizada correctamente', 'success')
       currentView.value = 'list'
     }
-  } catch (e) {
+  } catch {
     showToast('Error al guardar la categoría', 'error')
   } finally {
     isSubmitting.value = false

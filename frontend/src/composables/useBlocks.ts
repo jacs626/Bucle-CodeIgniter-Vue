@@ -1,18 +1,7 @@
 import { ref, computed } from 'vue'
 import { blocksApi } from '@/api'
-import type { Block } from '@/types'
+import type { Block, BlockFormData } from '@/types'
 import { useToast } from './useToast'
-
-export interface BlockFormData {
-  entity_id: number | null
-  name: string
-  type: string
-  data?: Record<string, unknown>
-  schedule?: Record<string, unknown>
-  parent_block_id?: number | null
-  order_index?: number
-  is_active?: boolean
-}
 
 export function useBlocks() {
   const { showToast } = useToast()
@@ -86,7 +75,7 @@ export function useBlocks() {
 
     try {
       const response = await blocksApi.create(data)
-      const created = response.data.data
+      const created = response.data.data!
       blocks.value.push(created)
       showToast('Block creado correctamente', 'success')
       return created
@@ -106,7 +95,7 @@ export function useBlocks() {
 
     try {
       const response = await blocksApi.update(id, data)
-      const updated = response.data.data
+      const updated = response.data.data!
 
       const index = blocks.value.findIndex((b) => b.id === id)
       if (index !== -1) {

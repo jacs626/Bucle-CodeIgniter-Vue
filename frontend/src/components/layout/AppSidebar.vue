@@ -47,9 +47,9 @@ const isActive = (name: string) => route.name === name
         :key="item.name"
         :to="item.path"
         class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
-        :class="isOpen ? '' : 'justify-center', isActive(item.name) 
+        :class="[isOpen ? '' : 'justify-center', isActive(item.name) 
           ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 shadow-sm' 
-          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'"
+          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white']"
       >
         <span class="text-lg">{{ item.icon }}</span>
         <span v-if="isOpen">{{ item.label }}</span>

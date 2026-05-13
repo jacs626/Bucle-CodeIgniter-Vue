@@ -1,5 +1,5 @@
 import { get, post, put, del } from '@/api/client';
-import type { ApiResponse, Entity } from '@/types';
+import type { Entity } from '@/types';
 
 export const entitiesApi = {
   getAll: () => get<Entity[]>('entities'),

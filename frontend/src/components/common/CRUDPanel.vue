@@ -30,14 +30,19 @@ const entitiesStore = useEntitiesStore()
 const blocksStore = useBlocksStore()
 
 const activeTab = ref<'category' | 'entity' | 'block' | null>(null)
-const editingCategory = ref<Category | null>(null)
+const editingCategoryLocal = ref<Category | null>(null)
 const editingEntity = ref<Entity | null>(null)
 const message = ref<{ type: 'success' | 'error'; text: string } | null>(null)
+const categoryFormData = ref({ name: '', icon: '' })
+const entityFormData = ref({ name: '', description: '', type: 'project', category_id: null as number | null })
 
 watch(() => props.editingCategory, (cat) => {
   if (cat) {
-    editingCategory.value = cat
+    editingCategoryLocal.value = cat
+    categoryFormData.value = { name: cat.name, icon: cat.icon ?? '' }
     activeTab.value = 'category'
+  } else {
+    categoryFormData.value = { name: '', icon: '' }
   }
 }, { immediate: true })
 
@@ -55,57 +60,62 @@ const showMessage = (type: 'success' | 'error', text: string) => {
 
 const closePanel = () => {
   activeTab.value = null
-  editingCategory.value = null
+  editingCategoryLocal.value = null
   editingEntity.value = null
   emit('close')
 }
 
-const handleCategorySubmit = async (data: { name: string; icon: string }) => {
+const handleCategorySubmit = async () => {
   try {
-    if (editingCategory.value) {
-      await categoriesStore.updateCategory(editingCategory.value.id, data)
+    const data = categoryFormData.value
+    if (editingCategoryLocal.value) {
+      await categoriesStore.updateCategory(editingCategoryLocal.value.id, data)
       showMessage('success', `"${data.name}" actualizada`)
-      emit('categoryUpdated', { ...editingCategory.value, ...data })
+      emit('categoryUpdated', { ...editingCategoryLocal.value, ...data })
     } else {
       const created = await categoriesStore.createCategory(data)
-      showMessage('success', `"${created.name}" creada`)
-      emit('categoryCreated', created)
+      showMessage('success', `"${created?.name}" creada`)
+      emit('categoryCreated', created!)
     }
     closePanel()
-  } catch (e) {
+  } catch {
     showMessage('error', 'Error al guardar categoría')
   }
 }
 
-const handleEntitySubmit = async (data: { name: string; description?: string; type: string; category_id: number | null }) => {
+const handleEntitySubmit = async () => {
   try {
+    const data = entityFormData.value
     if (editingEntity.value) {
       const updated = await entitiesStore.updateEntity(editingEntity.value.id, data)
       showMessage('success', `"${data.name}" actualizada`)
       emit('entityUpdated', updated)
     } else {
       const created = await entitiesStore.createEntity(data)
-      showMessage('success', `"${created.name}" creada`)
-      emit('entityCreated', created)
+      showMessage('success', `"${created?.name}" creada`)
+      emit('entityCreated', created!)
     }
     closePanel()
-  } catch (e) {
+  } catch {
     showMessage('error', 'Error al guardar entidad')
   }
 }
 
-const handleBlockSubmit = async (data: { name: string; type: string; data?: Record<string, unknown>; schedule?: Record<string, unknown> }) => {
+const handleBlockSubmit = async (data: { name: string; type: string; data?: Record<string, unknown>; schedule?: { type: 'fixed' | 'interval' | 'weekly'; time?: string; intervalHours?: number; daysOfWeek?: string[]; date?: string; startDate?: string } }) => {
   try {
     if (props.selectedEntity) {
       await blocksStore.createBlock({
-        ...data,
+        name: data.name,
+        type: data.type,
+        data: data.data,
+        schedule: data.schedule,
         entity_id: props.selectedEntity.id,
       })
       showMessage('success', 'Bloque creado')
       emit('blockCreated')
       closePanel()
     }
-  } catch (e) {
+  } catch {
     showMessage('error', 'Error al crear bloque')
   }
 }
@@ -163,18 +173,18 @@ const handleBlockSubmit = async (data: { name: string; type: string; data?: Reco
 
     <div v-if="activeTab === 'category'" class="mt-4">
       <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">
-        {{ editingCategory ? 'Editar Categoría' : 'Nueva Categoría' }}
+        {{ editingCategoryLocal ? 'Editar Categoría' : 'Nueva Categoría' }}
       </h3>
       <form @submit.prevent="handleCategorySubmit" class="space-y-3">
         <input
-          v-model="editingCategory.name"
+          v-model="categoryFormData.name"
           type="text"
           placeholder="Nombre de categoría"
           class="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           required
         />
         <input
-          v-model="editingCategory.icon"
+          v-model="categoryFormData.icon"
           type="text"
           placeholder="Icono (ej: 📁)"
           class="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -201,22 +211,22 @@ const handleBlockSubmit = async (data: { name: string; type: string; data?: Reco
       <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">
         {{ editingEntity ? 'Editar Entidad' : 'Nueva Entidad' }}
       </h3>
-      <form @submit.prevent="handleEntitySubmit({ name: editingEntity?.name || '', description: editingEntity?.description || '', type: editingEntity?.type || 'project', category_id: editingEntity?.category_id || null })" class="space-y-3">
+      <form @submit.prevent="handleEntitySubmit" class="space-y-3">
         <input
-          v-model="editingEntity.name"
+          v-model="entityFormData.name"
           type="text"
           placeholder="Nombre de entidad"
           class="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           required
         />
         <textarea
-          v-model="editingEntity.description"
+          v-model="entityFormData.description"
           placeholder="Descripción"
           rows="2"
           class="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
         <select
-          v-model="editingEntity.category_id"
+          v-model="entityFormData.category_id"
           class="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <option :value="null">Sin categoría</option>

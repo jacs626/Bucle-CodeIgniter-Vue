@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { Category, Entity } from '@/types'
+import { idsMatch } from '@/utils/id'
 
 interface Props {
   categories: Category[]
@@ -21,19 +22,34 @@ const categoryOpen = ref(false)
 const entityOpen = ref(false)
 
 const filteredEntities = computed(() => {
-  if (props.selectedCategoryId) {
-    return props.entities.filter((e) => e.category_id === props.selectedCategoryId)
+  if (!props.selectedCategoryId) {
+    return props.entities
   }
-  return props.entities
+  return props.entities.filter((e) => idsMatch(e.category_id, props.selectedCategoryId))
 })
 
 const selectedCategory = computed(() => {
-  return props.categories.find((c) => c.id === props.selectedCategoryId)
+  return props.categories.find((c) => idsMatch(c.id, props.selectedCategoryId))
 })
 
 const activeEntity = computed(() => {
-  return props.entities.find((e) => e.id === props.selectedEntityId)
+  return props.entities.find((e) => idsMatch(e.id, props.selectedEntityId))
 })
+
+const handleCategorySelect = (catId: number) => {
+  categoryOpen.value = false
+  emit('categorySelect', catId)
+}
+
+const handleEntitySelect = (entityId: number) => {
+  entityOpen.value = false
+  emit('entitySelect', entityId)
+}
+
+const handleCategoryEdit = (cat: Category) => {
+  categoryOpen.value = false
+  emit('categoryEdit', cat)
+}
 </script>
 
 <template>
@@ -67,8 +83,8 @@ const activeEntity = computed(() => {
               v-for="cat in categories"
               :key="cat.id"
               class="flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
-              :class="selectedCategoryId === cat.id ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'"
-              @click="categoryOpen = false; emit('categorySelect', cat.id)"
+              :class="idsMatch(selectedCategoryId, cat.id) ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'"
+              @click="handleCategorySelect(cat.id)"
             >
               <div class="flex items-center gap-2">
                 <span>{{ cat.icon }}</span>
@@ -77,7 +93,7 @@ const activeEntity = computed(() => {
               <button
                 type="button"
                 class="p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400"
-                @click.stop="categoryOpen = false; emit('categoryEdit', cat)"
+                @click.stop="handleCategoryEdit(cat)"
               >
                 ✏️
               </button>
@@ -111,15 +127,15 @@ const activeEntity = computed(() => {
               v-if="filteredEntities.length === 0"
               class="px-3 py-2 text-sm text-slate-400 dark:text-slate-500"
             >
-              No hay entidades
+              No hay entidades en esta categoría
             </div>
             <button
               v-for="entity in filteredEntities"
               :key="entity.id"
               type="button"
-              @click="entityOpen = false; emit('entitySelect', entity.id)"
+              @click="handleEntitySelect(entity.id)"
               class="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer"
-              :class="selectedEntityId === entity.id ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'"
+              :class="idsMatch(selectedEntityId, entity.id) ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-200'"
             >
               <span class="truncate">{{ entity.name }}</span>
             </button>

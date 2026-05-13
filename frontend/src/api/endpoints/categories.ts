@@ -1,5 +1,5 @@
 import { get, post, put, del } from '@/api/client';
-import type { ApiResponse, Category } from '@/types';
+import type { Category } from '@/types';
 
 export const categoriesApi = {
   getAll: () => get<Category[]>('categories'),

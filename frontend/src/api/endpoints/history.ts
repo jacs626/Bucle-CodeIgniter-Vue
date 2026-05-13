@@ -1,5 +1,5 @@
 import { get, post, del } from '@/api/client';
-import type { ApiResponse, History } from '@/types';
+import type { History } from '@/types';
 
 export const historyApi = {
   getAll: () => get<History[]>('history'),

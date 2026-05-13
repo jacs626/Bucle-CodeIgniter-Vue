@@ -1,5 +1,5 @@
 import { get, post, put, del } from '@/api/client';
-import type { ApiResponse, Document } from '@/types';
+import type { Document } from '@/types';
 
 export const documentsApi = {
   getAll: () => get<Document[]>('documents'),

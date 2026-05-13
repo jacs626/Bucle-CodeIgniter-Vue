@@ -67,7 +67,7 @@ export function useHistory() {
 
     try {
       const response = await historyApi.create(data)
-      const created = response.data.data
+      const created = response.data.data!
       histories.value.push(created)
       showToast('Registro creado correctamente', 'success')
       return created

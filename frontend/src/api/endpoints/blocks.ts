@@ -1,5 +1,5 @@
 import { get, post, put, del } from '@/api/client';
-import type { ApiResponse, Block } from '@/types';
+import type { Block } from '@/types';
 
 export const blocksApi = {
   getAll: () => get<Block[]>('blocks'),
