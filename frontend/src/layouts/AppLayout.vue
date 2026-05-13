@@ -27,7 +27,7 @@ const detailPanelWidth = '384px'
     
     <div 
       class="flex-1 flex flex-col overflow-hidden transition-all duration-300"
-      :style="{ marginLeft: sidebarWidth }"
+      :style="{ marginLeft: sidebarWidth, marginRight: isDetailPanelOpen ? detailPanelWidth : '0' }"
     >
       <AppHeader @toggle-sidebar="toggleSidebar" />
       

@@ -95,8 +95,13 @@ const handleBlockEdit = (block: Block) => {
 };
 
 const handleBlockClick = (block: Block) => {
-  selectedBlock.value = block;
-  detailPanelOpen && (detailPanelOpen.value = true);
+  if (selectedBlock.value && idsMatch(selectedBlock.value.id, block.id)) {
+    selectedBlock.value = null;
+    detailPanelOpen && (detailPanelOpen.value = false);
+  } else {
+    selectedBlock.value = block;
+    detailPanelOpen && (detailPanelOpen.value = true);
+  }
 };
 
 const handleCloseBlockDetail = () => {
