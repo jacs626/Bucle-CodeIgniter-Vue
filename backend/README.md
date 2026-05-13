@@ -1,69 +1,118 @@
-# CodeIgniter 4 Application Starter
+# Backend - CodeIgniter 4
 
-## What is CodeIgniter?
+## Visión General
 
-CodeIgniter is a PHP full-stack web framework that is light, fast, flexible and secure.
-More information can be found at the [official site](https://codeigniter.com).
+Backend API REST construido con CodeIgniter 4 PHP.
 
-This repository holds a composer-installable app starter.
-It has been built from the
-[development repository](https://github.com/codeigniter4/CodeIgniter4).
+## Estructura de Módulos
 
-More information about the plans for version 4 can be found in [CodeIgniter 4](https://forum.codeigniter.com/forumdisplay.php?fid=28) on the forums.
+```
+app/Modules/
+├── Blocks/
+│   ├── Controllers/    # CRUD endpoints
+│   ├── Services/       # Lógica de negocio + Strategy
+│   ├── Models/         # Acceso a datos
+│   ├── Entities/       # Entidades de dominio
+│   └── Transformers/   # Formateo de respuestas
+├── Categories/         # CRUD categorías
+├── Documents/          # CRUD documentos
+├── Entities/           # CRUD entidades con metadata
+└── History/            # Historial de ejecuciones
 
-You can read the [user guide](https://codeigniter.com/user_guide/)
-corresponding to the latest version of the framework.
+app/Blocks/             # Strategy Pattern
+├── Context/
+├── Interfaces/
+└── Strategies/         # TaskStrategy, ReminderStrategy, PaymentStrategy, WorkflowStrategy
+```
 
-## Installation & updates
+## API Endpoints
 
-`composer create-project codeigniter4/appstarter` then `composer update` whenever
-there is a new release of the framework.
+### Categories
+- `GET /api/categories` - Listar todas
+- `GET /api/categories/:id` - Ver una
+- `POST /api/categories` - Crear
+- `PUT /api/categories/:id` - Actualizar
+- `DELETE /api/categories/:id` - Eliminar
 
-When updating, check the release notes to see if there are any changes you might need to apply
-to your `app` folder. The affected files can be copied or merged from
-`vendor/codeigniter4/framework/app`.
+### Entities
+- `GET /api/entities` - Listar todas
+- `GET /api/entities/:id` - Ver una
+- `POST /api/entities` - Crear (soporta metadata JSON)
+- `PUT /api/entities/:id` - Actualizar
+- `DELETE /api/entities/:id` - Eliminar
 
-## Setup
+### Blocks
+- `GET /api/blocks` - Listar todos
+- `GET /api/blocks/:id` - Ver uno
+- `GET /api/blocks/entity/:entityId` - Bloques por entidad
+- `POST /api/blocks` - Crear (soporta schedule JSON)
+- `PUT /api/blocks/:id` - Actualizar
+- `DELETE /api/blocks/:id` - Eliminar
 
-Copy `env` to `.env` and tailor for your app, specifically the baseURL
-and any database settings.
+### History
+- `GET /api/history` - Listar historial
+- `GET /api/history/:id` - Ver entrada
+- `POST /api/history` - Crear entrada
+- `DELETE /api/history/:id` - Eliminar
 
-## Important Change with index.php
+### Documents
+- `GET /api/documents` - Listar documentos
+- `GET /api/documents/:id` - Ver documento
+- `POST /api/documents` - Crear (soporta upload)
+- `PUT /api/documents/:id` - Actualizar
+- `DELETE /api/documents/:id` - Eliminar
 
-`index.php` is no longer in the root of the project! It has been moved inside the *public* folder,
-for better security and separation of components.
+## Scripts
 
-This means that you should configure your web server to "point" to your project's *public* folder, and
-not to the project root. A better practice would be to configure a virtual host to point there. A poor practice would be to point your web server to the project root and expect to enter *public/...*, as the rest of your logic and the
-framework are exposed.
+```bash
+php spark serve       # Servidor desarrollo (puerto 8080)
+php spark migrate     # Ejecutar migraciones
+php spark db:seed     # Datos de prueba
+php spark db:create   # Crear base de datos
+```
 
-**Please** read the user guide for a better explanation of how CI4 works!
+## Formato de Respuesta
 
-## Repository Management
+```json
+{
+  "status": "success",
+  "message": "Mensaje descriptivo",
+  "data": { ... }
+}
+```
 
-We use GitHub issues, in our main repository, to track **BUGS** and to track approved **DEVELOPMENT** work packages.
-We use our [forum](http://forum.codeigniter.com) to provide SUPPORT and to discuss
-FEATURE REQUESTS.
+## Modelo de Datos
 
-This repository is a "distribution" one, built by our release preparation script.
-Problems with it can be raised on our forum, or as issues in the main repository.
+### entities
+- id, name, description, type, category_id, metadata (JSON), is_active, timestamps
 
-## Server Requirements
+### blocks
+- id, entity_id, name, type, data (JSON), schedule (JSON), parent_block_id, order_index, is_active, timestamps
 
-PHP version 8.2 or higher is required, with the following extensions installed:
+### history
+- id, entity_id, block_id, date, status, note (JSON), block_name, block_type, entity_name, entity_type, executed_at, timestamps
 
-- [intl](http://php.net/manual/en/intl.requirements.php)
-- [mbstring](http://php.net/manual/en/mbstring.installation.php)
+### documents
+- id, entity_id, block_id, title, url, type, file_type, file_size, is_published, timestamps
 
-> [!WARNING]
-> - The end of life date for PHP 7.4 was November 28, 2022.
-> - The end of life date for PHP 8.0 was November 26, 2023.
-> - The end of life date for PHP 8.1 was December 31, 2025.
-> - If you are still using below PHP 8.2, you should upgrade immediately.
-> - The end of life date for PHP 8.2 will be December 31, 2026.
+### categories
+- id, name, icon, timestamps
 
-Additionally, make sure that the following extensions are enabled in your PHP:
+## Estrategia de Bloques (Strategy Pattern)
 
-- json (enabled by default - don't turn it off)
-- [mysqlnd](http://php.net/manual/en/mysqlnd.install.php) if you plan to use MySQL
-- [libcurl](http://php.net/manual/en/curl.requirements.php) if you plan to use the HTTP\CURLRequest library
+Cada tipo de bloque implementa su propia lógica:
+- `TaskStrategy` - Tareas simples
+- `ReminderStrategy` - Recordatorios
+- `PaymentStrategy` - Pagos con montos
+- `WorkflowStrategy` - Flujos de trabajo con steps
+- `NoteStrategy` - Notas
+
+## Variables de Entorno
+
+Configurar en `.env`:
+```
+database.default.hostname = localhost
+database.default.database = bucle_db
+database.default.username = root
+database.default.password =
+```

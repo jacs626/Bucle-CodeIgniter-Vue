@@ -12,21 +12,21 @@ interface HistoryFormData {
 }
 
 export const useHistoryStore = defineStore('history', () => {
-  const histories = ref<History[]>([])
+  const history = ref<History[]>([])
   const currentHistory = ref<History | null>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
-  const hasHistories = computed(() => histories.value.length > 0)
-  const historyCount = computed(() => histories.value.length)
+  const hasHistories = computed(() => history.value.length > 0)
+  const historyCount = computed(() => history.value.length)
 
-  const fetchHistories = async () => {
+  const fetchHistory = async () => {
     isLoading.value = true
     error.value = null
 
     try {
       const response = await historyApi.getAll()
-      histories.value = response.data.data || []
+      history.value = response.data.data || []
     } catch (e) {
       error.value = 'Error al cargar el historial'
       console.error(e)
@@ -36,7 +36,7 @@ export const useHistoryStore = defineStore('history', () => {
     }
   }
 
-  const fetchHistory = async (id: number) => {
+  const fetchHistoryById = async (id: number) => {
     isLoading.value = true
     error.value = null
 
@@ -60,7 +60,7 @@ export const useHistoryStore = defineStore('history', () => {
     try {
       const response = await historyApi.create(data)
       const created = response.data.data!
-      histories.value.push(created)
+      history.value.push(created)
       return created
     } catch (e) {
       error.value = 'Error al crear el registro'
@@ -77,7 +77,7 @@ export const useHistoryStore = defineStore('history', () => {
 
     try {
       await historyApi.delete(id)
-      histories.value = histories.value.filter((h) => h.id !== id)
+      history.value = history.value.filter((h) => h.id !== id)
       return true
     } catch (e) {
       error.value = 'Error al eliminar el registro'
@@ -89,11 +89,11 @@ export const useHistoryStore = defineStore('history', () => {
   }
 
   const getHistoryById = (id: number): History | undefined => {
-    return histories.value.find((h) => h.id === id)
+    return history.value.find((h) => h.id === id)
   }
 
-  const setCurrentHistory = (history: History | null) => {
-    currentHistory.value = history
+  const setCurrentHistory = (hist: History | null) => {
+    currentHistory.value = hist
   }
 
   const clearError = () => {
@@ -101,14 +101,14 @@ export const useHistoryStore = defineStore('history', () => {
   }
 
   return {
-    histories,
+    history,
     currentHistory,
     isLoading,
     error,
     hasHistories,
     historyCount,
-    fetchHistories,
     fetchHistory,
+    fetchHistoryById,
     createHistory,
     deleteHistory,
     getHistoryById,

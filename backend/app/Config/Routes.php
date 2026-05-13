@@ -1,7 +1,6 @@
 <?php
 
 use CodeIgniter\Router\RouteCollection;
-use App\Modules\Categories\Controllers\CategoryController;
 
 /**
  * @var RouteCollection $routes
@@ -9,12 +8,10 @@ use App\Modules\Categories\Controllers\CategoryController;
 
 $routes->get('/', 'Home::index');
 
-// CORS preflight routes
 $routes->options('(:any)', function () {
     return service('response')->setStatusCode(200);
 });
 
-// Categories
 $routes->group('api', ['namespace' => 'App\Modules\Categories\Controllers'], function ($routes) {
     $routes->get('categories', 'CategoryController::index');
     $routes->get('categories/(:num)', 'CategoryController::show/$1');
@@ -23,7 +20,6 @@ $routes->group('api', ['namespace' => 'App\Modules\Categories\Controllers'], fun
     $routes->delete('categories/(:num)', 'CategoryController::delete/$1');
 });
 
-// Entities
 $routes->group('api', ['namespace' => 'App\Modules\Entities\Controllers'], function ($routes) {
     $routes->get('entities', 'EntityController::index');
     $routes->get('entities/(:num)', 'EntityController::show/$1');
@@ -32,7 +28,6 @@ $routes->group('api', ['namespace' => 'App\Modules\Entities\Controllers'], funct
     $routes->delete('entities/(:num)', 'EntityController::delete/$1');
 });
 
-// Blocks
 $routes->group('api', ['namespace' => 'App\Modules\Blocks\Controllers'], function ($routes) {
     $routes->get('blocks', 'BlockController::index');
     $routes->get('blocks/(:num)', 'BlockController::show/$1');
@@ -42,7 +37,6 @@ $routes->group('api', ['namespace' => 'App\Modules\Blocks\Controllers'], functio
     $routes->delete('blocks/(:num)', 'BlockController::delete/$1');
 });
 
-// History
 $routes->group('api', ['namespace' => 'App\Modules\History\Controllers'], function ($routes) {
     $routes->get('history', 'HistoryController::index');
     $routes->get('history/(:num)', 'HistoryController::show/$1');
@@ -50,7 +44,6 @@ $routes->group('api', ['namespace' => 'App\Modules\History\Controllers'], functi
     $routes->delete('history/(:num)', 'HistoryController::delete/$1');
 });
 
-// Documents
 $routes->group('api', ['namespace' => 'App\Modules\Documents\Controllers'], function ($routes) {
     $routes->get('documents', 'DocumentController::index');
     $routes->get('documents/(:num)', 'DocumentController::show/$1');

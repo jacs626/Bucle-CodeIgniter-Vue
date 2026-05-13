@@ -49,7 +49,8 @@ class BlockService
 
     public function create(array $data): array
     {
-        $block = new Block($data);
+        $blockData = $this->prepareData($data);
+        $block = new Block($blockData);
 
         $id = $this->blockModel->insert($block);
 
@@ -62,7 +63,8 @@ class BlockService
 
     public function update(int $id, array $data): array
     {
-        $block = new Block($data);
+        $blockData = $this->prepareData($data);
+        $block = new Block($blockData);
         $block->id = $id;
 
         $this->blockModel->update($id, $block);
@@ -93,12 +95,34 @@ class BlockService
 
         $validTypes = ['task', 'reminder', 'payment', 'step', 'note', 'workflow'];
         if (!empty($data['type']) && !in_array($data['type'], $validTypes)) {
-            $errors['type'] = 'Tipo de block inválido';
+            $errors['type'] = 'Tipo de block invalido';
         }
 
         return [
             'valid' => empty($errors),
             'errors' => $errors,
         ];
+    }
+
+    protected function prepareData(array $data): array
+    {
+        $prepared = [];
+
+        if (isset($data['entity_id'])) $prepared['entity_id'] = $data['entity_id'];
+        if (isset($data['name'])) $prepared['name'] = $data['name'];
+        if (isset($data['type'])) $prepared['type'] = $data['type'];
+        if (isset($data['parent_block_id'])) $prepared['parent_block_id'] = $data['parent_block_id'];
+        if (isset($data['order_index'])) $prepared['order_index'] = $data['order_index'];
+        if (isset($data['is_active'])) $prepared['is_active'] = $data['is_active'];
+
+        if (isset($data['data']) && is_array($data['data'])) {
+            $prepared['data'] = json_encode($data['data']);
+        }
+
+        if (isset($data['schedule']) && is_array($data['schedule'])) {
+            $prepared['schedule'] = json_encode($data['schedule']);
+        }
+
+        return $prepared;
     }
 }

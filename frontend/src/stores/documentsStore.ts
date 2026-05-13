@@ -118,6 +118,28 @@ export const useDocumentsStore = defineStore('documents', () => {
     currentDocument.value = document
   }
 
+  const uploadDocument = async (file: File) => {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('title', file.name)
+      
+      const response = await documentsApi.upload(formData)
+      const created = response.data.data!
+      documents.value.push(created)
+      return created
+    } catch (e) {
+      error.value = 'Error al subir el documento'
+      console.error(e)
+      throw e
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   const clearError = () => {
     error.value = null
   }
@@ -134,6 +156,7 @@ export const useDocumentsStore = defineStore('documents', () => {
     createDocument,
     updateDocument,
     deleteDocument,
+    uploadDocument,
     getDocumentById,
     setCurrentDocument,
     clearError,

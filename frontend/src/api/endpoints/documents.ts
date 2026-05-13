@@ -1,3 +1,4 @@
+import apiClient from '@/api/client';
 import { get, post, put, del } from '@/api/client';
 import type { Document } from '@/types';
 
@@ -14,4 +15,10 @@ export const documentsApi = {
 
   delete: (id: number) =>
     del<void>(`documents/${id}`),
+
+  upload: async (formData: FormData) => {
+    return apiClient.post<Document>('documents', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
 };

@@ -5,6 +5,7 @@ import AppHeader from '@/components/layout/AppHeader.vue'
 
 const isSidebarOpen = ref(true)
 const isDetailPanelOpen = ref(false)
+const notificationCount = ref(0)
 
 provide('detailPanelOpen', isDetailPanelOpen)
 
@@ -14,24 +15,23 @@ const toggleSidebar = () => {
 
 const sidebarWidth = computed(() => isSidebarOpen.value ? '256px' : '80px')
 const detailPanelWidth = '384px'
-const contentMargin = computed(() => {
-  let margin = sidebarWidth.value
-  if (isDetailPanelOpen.value) {
-    margin = `calc(${sidebarWidth.value} + ${detailPanelWidth})`
-  }
-  return margin
-})
 </script>
 
 <template>
   <div class="flex h-screen bg-gray-50 dark:bg-slate-900">
-    <AppSidebar :is-open="isSidebarOpen" />
+    <AppSidebar 
+      :is-open="isSidebarOpen"
+      :notification-count="notificationCount"
+      @toggle-collapse="toggleSidebar"
+    />
+    
     <div 
       class="flex-1 flex flex-col overflow-hidden transition-all duration-300"
-      :style="{ marginLeft: sidebarWidth, marginRight: isDetailPanelOpen ? detailPanelWidth : '0' }"
+      :style="{ marginLeft: sidebarWidth }"
     >
       <AppHeader @toggle-sidebar="toggleSidebar" />
-      <main class="flex-1 overflow-y-auto p-6">
+      
+      <main class="flex-1 overflow-y-auto">
         <router-view />
       </main>
     </div>

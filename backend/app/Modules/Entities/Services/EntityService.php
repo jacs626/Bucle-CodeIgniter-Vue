@@ -42,7 +42,8 @@ class EntityService
 
     public function create(array $data): array
     {
-        $entity = new EntityData($data);
+        $entityData = $this->prepareData($data);
+        $entity = new EntityData($entityData);
 
         $id = $this->entityModel->insert($entity);
 
@@ -55,7 +56,8 @@ class EntityService
 
     public function update(int $id, array $data): array
     {
-        $entity = new EntityData($data);
+        $entityData = $this->prepareData($data);
+        $entity = new EntityData($entityData);
         $entity->id = $id;
 
         $this->entityModel->update($id, $entity);
@@ -93,5 +95,22 @@ class EntityService
         $entities = $this->entityModel->getWithCategory()->findAll();
 
         return $this->transformer->transformCollection($entities);
+    }
+
+    protected function prepareData(array $data): array
+    {
+        $prepared = [];
+
+        if (isset($data['name'])) $prepared['name'] = $data['name'];
+        if (isset($data['description'])) $prepared['description'] = $data['description'];
+        if (isset($data['type'])) $prepared['type'] = $data['type'];
+        if (array_key_exists('category_id', $data)) $prepared['category_id'] = $data['category_id'];
+        if (isset($data['is_active'])) $prepared['is_active'] = $data['is_active'];
+
+        if (isset($data['metadata']) && is_array($data['metadata'])) {
+            $prepared['metadata'] = json_encode($data['metadata']);
+        }
+
+        return $prepared;
     }
 }

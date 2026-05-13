@@ -1,138 +1,153 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { historyApi } from '@/api'
-import type { History } from '@/types'
+import { ref, onMounted, computed } from 'vue'
+import { useHistoryStore } from '@/stores/historyStore'
+import { useEntitiesStore } from '@/stores/entitiesStore'
+import StatusBadge from '@/components/common/StatusBadge.vue'
 
-const history = ref<History[]>([])
+const historyStore = useHistoryStore()
+const entitiesStore = useEntitiesStore()
+
+const filter = ref<'all' | 'done' | 'missed'>('all')
 const isLoading = ref(true)
-const error = ref<string | null>(null)
 
-const loadHistory = async () => {
-  try {
-    isLoading.value = true
-    const response = await historyApi.getAll()
-    history.value = response.data.data || []
-  } catch (e) {
-    error.value = 'Failed to load history'
-    console.error(e)
-  } finally {
-    isLoading.value = false
-  }
+const filteredHistory = computed(() => {
+  const all = historyStore.history
+  if (filter.value === 'all') return all
+  return all.filter(h => h.status === filter.value)
+})
+
+const formatDate = (date: string | null) => {
+  if (!date) return 'Sin fecha'
+  return new Date(date).toLocaleString('es-ES', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
-onMounted(() => {
-  loadHistory()
+const formatTimeAgo = (date: string | null) => {
+  if (!date) return ''
+  const now = new Date()
+  const d = new Date(date)
+  const diffMs = now.getTime() - d.getTime()
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMins / 60)
+  const diffDays = Math.floor(diffHours / 24)
+
+  if (diffMins < 1) return 'hace un momento'
+  if (diffMins < 60) return `hace ${diffMins}m`
+  if (diffHours < 24) return `hace ${diffHours}h`
+  if (diffDays < 7) return `hace ${diffDays}d`
+  return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+}
+
+onMounted(async () => {
+  await Promise.all([
+    historyStore.fetchHistory(),
+    entitiesStore.fetchEntities(),
+  ])
+  isLoading.value = false
 })
 </script>
 
 <template>
-  <div class="history-view">
-    <div class="page-header">
-      <h2>History</h2>
+  <div class="max-w-5xl mx-auto space-y-6">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-800 dark:text-white">Historial</h2>
+        <p class="text-slate-500 dark:text-slate-400 text-sm">Registro completo de todas las ejecuciones</p>
+      </div>
     </div>
 
-    <div v-if="isLoading" class="loading">Loading history...</div>
-    <div v-else-if="error" class="error">{{ error }}</div>
-    <div v-else class="content">
-      <div v-if="history.length === 0" class="empty-state">
-        <p>No history records found.</p>
-      </div>
-      <div v-else class="history-list">
-        <div v-for="item in history" :key="item.id" class="history-item">
-          <div class="history-action">
-            <span class="action-badge">{{ item.action }}</span>
-          </div>
-          <div class="history-details">
-            <span class="entity-type">{{ item.entity_type }}</span>
-            <span class="entity-id">#{{ item.entity_id }}</span>
-          </div>
-          <div class="history-time">
-            {{ new Date(item.created_at).toLocaleString() }}
+    <div class="flex gap-2 mb-4">
+      <button
+        @click="filter = 'all'"
+        :class="[
+          'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+          filter === 'all' 
+            ? 'bg-indigo-600 text-white' 
+            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+        ]"
+      >
+        Todos
+      </button>
+      <button
+        @click="filter = 'done'"
+        :class="[
+          'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+          filter === 'done' 
+            ? 'bg-emerald-600 text-white' 
+            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+        ]"
+      >
+        Completados
+      </button>
+      <button
+        @click="filter = 'missed'"
+        :class="[
+          'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+          filter === 'missed' 
+            ? 'bg-red-600 text-white' 
+            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+        ]"
+      >
+        Perdidos
+      </button>
+    </div>
+
+    <div v-if="isLoading" class="text-center text-slate-500 py-12">
+      Cargando historial...
+    </div>
+
+    <div v-else-if="filteredHistory.length === 0" class="text-center py-12">
+      <div class="text-4xl mb-4">📜</div>
+      <p class="text-slate-500 dark:text-slate-400">No hay registros de historial</p>
+    </div>
+
+    <div v-else class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div class="divide-y divide-slate-100 dark:divide-slate-700">
+        <div 
+          v-for="item in filteredHistory" 
+          :key="item.id"
+          class="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+              <div 
+                class="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
+                :class="[
+                  item.block_type === 'payment' ? 'bg-emerald-100 dark:bg-emerald-900/50' :
+                  item.block_type === 'reminder' ? 'bg-amber-100 dark:bg-amber-900/50' :
+                  item.block_type === 'workflow' ? 'bg-purple-100 dark:bg-purple-900/50' :
+                  'bg-blue-100 dark:bg-blue-900/50'
+                ]"
+              >
+                {{ item.block_type === 'payment' ? '💰' : item.block_type === 'reminder' ? '🔔' : item.block_type === 'workflow' ? '📋' : '✓' }}
+              </div>
+              <div>
+                <p class="font-medium text-slate-800 dark:text-slate-200">
+                  {{ item.block_name || 'Bloque sin nombre' }}
+                </p>
+                <p class="text-sm text-slate-500 dark:text-slate-400">
+                  {{ item.entity_name || 'Sin entidad' }}
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="text-right">
+                <p class="text-sm text-slate-500 dark:text-slate-400">
+                  {{ formatDate(item.date) }}
+                </p>
+                <p class="text-xs text-slate-400 dark:text-slate-500">
+                  {{ formatTimeAgo(item.date) }}
+                </p>
+              </div>
+              <StatusBadge :status="item.status === 'done' ? 'done' : 'missed'" size="sm" />
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.history-view {
-  max-width: 1200px;
-}
-
-.page-header {
-  margin-bottom: 24px;
-}
-
-.page-header h2 {
-  font-size: 24px;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
-}
-
-.loading, .error {
-  text-align: center;
-  padding: 40px;
-  color: #6b7280;
-}
-
-.error {
-  color: #dc2626;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-  background: #fff;
-  border-radius: 12px;
-}
-
-.history-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.history-item {
-  background: #fff;
-  border-radius: 12px;
-  padding: 16px 20px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.action-badge {
-  padding: 4px 10px;
-  background: #e0e7ff;
-  color: #4f46e5;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.history-details {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.entity-type {
-  font-size: 14px;
-  font-weight: 500;
-  color: #1f2937;
-}
-
-.entity-id {
-  font-size: 14px;
-  color: #6b7280;
-}
-
-.history-time {
-  font-size: 12px;
-  color: #9ca3af;
-}
-</style>

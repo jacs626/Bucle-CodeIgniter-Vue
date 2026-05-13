@@ -21,7 +21,7 @@ class HistoryService
     public function getAll(): array
     {
         $histories = $this->historyModel
-            ->orderBy('created_at', 'DESC')
+            ->orderBy('date', 'DESC')
             ->findAll();
 
         return $this->transformer->transformCollection($histories);
@@ -55,6 +55,22 @@ class HistoryService
         return $this->findById($id);
     }
 
+    public function completeHistory(int $id): ?array
+    {
+        $history = $this->historyModel->find($id);
+
+        if (!$history) {
+            return null;
+        }
+
+        $history->status = 'done';
+        $history->executed_at = date('Y-m-d H:i:s');
+
+        $this->historyModel->update($id, $history);
+
+        return $this->findById($id);
+    }
+
     public function delete(int $id): bool
     {
         return $this->historyModel->delete($id);
@@ -64,16 +80,8 @@ class HistoryService
     {
         $errors = [];
 
-        if (empty($data['entity_type'])) {
-            $errors['entity_type'] = 'Entity type is required';
-        }
-
-        if (empty($data['entity_id'])) {
-            $errors['entity_id'] = 'Entity ID is required';
-        }
-
-        if (empty($data['action'])) {
-            $errors['action'] = 'Action is required';
+        if (empty($data['entity_id']) && empty($data['block_id'])) {
+            $errors['entity_id'] = 'Entity ID or Block ID is required';
         }
 
         return [

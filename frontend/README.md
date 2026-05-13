@@ -1,48 +1,66 @@
-# frontend
+# Frontend - Vue 3 + Tailwind CSS
 
-This template should help get you started developing with Vue 3 in Vite.
+## Visión General
 
-## Recommended IDE Setup
+Frontend SPA construido con Vue 3, TypeScript, Pinia y Tailwind CSS.
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## Estructura
 
-## Recommended Browser Setup
-
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
-
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
+```
+src/
+├── api/              # API client y endpoints
+├── components/       # Componentes Vue
+│   ├── blocks/       # Componentes de bloques
+│   ├── categories/    # Componentes de categorías
+│   ├── common/       # Componentes compartidos
+│   └── layout/       # Layout principal
+├── composables/      # Composables de Vue
+├── layouts/          # Layouts de página
+├── router/           # Configuración de rutas
+├── stores/           # Stores de Pinia
+├── types/            # Tipos TypeScript
+├── utils/            # Utilidades
+└── views/            # Vistas de página
 ```
 
-### Compile and Hot-Reload for Development
+## Scripts
 
-```sh
-npm run dev
+```bash
+npm run dev      # Desarrollo
+npm run build    # Producción
+npm run preview  # Preview producción
+npm run lint     # Linting
 ```
 
-### Type-Check, Compile and Minify for Production
+## Rutas
 
-```sh
-npm run build
+- `/` - BucleView (workflow principal)
+- `/entities` - EntitiesView
+- `/blocks` - BlocksView
+- `/calendar` - CalendarView
+- `/notifications` - NotificationsView
+- `/history` - HistoryView
+- `/documents` - DocumentsView
+- `/categories` - CategoriesView
+
+## Stores (Pinia)
+
+- `useEntitiesStore` - Entidades con metadata
+- `useBlocksStore` - Bloques con schedule
+- `useCategoriesStore` - Categorías
+- `useHistoryStore` - Historial de ejecuciones
+- `useDocumentsStore` - Documentos
+
+## Variables de Entorno
+
+```
+VITE_API_URL=http://localhost:8080
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+## Dependencias Principales
 
-```sh
-npm run lint
-```
+- Vue 3.4+
+- Pinia 2.1+
+- Vue Router 4+
+- Tailwind CSS 3+
+- Axios

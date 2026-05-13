@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import type { Category, Entity, Block } from '@/types'
+import type { Category, Entity, Block, MetaFieldDefinition } from '@/types'
 import { useToast } from '@/composables/useToast'
 import { useCategoriesStore } from '@/stores/categoriesStore'
 import { useEntitiesStore } from '@/stores/entitiesStore'
 import { useBlocksStore } from '@/stores/blocksStore'
+import MetaFieldsEditor from './MetaFieldsEditor.vue'
 
 interface Props {
   selectedEntity?: Entity | null
@@ -34,24 +35,70 @@ const editingCategoryLocal = ref<Category | null>(null)
 const editingEntity = ref<Entity | null>(null)
 const message = ref<{ type: 'success' | 'error'; text: string } | null>(null)
 const categoryFormData = ref({ name: '', icon: '' })
-const entityFormData = ref({ name: '', description: '', type: 'project', category_id: null as number | null })
+
+const entityFormData = ref({
+  name: '',
+  description: '',
+  type: 'project',
+  category_id: null as number | null,
+  metadata: {} as Record<string, unknown>
+})
+const entityMetaFields = ref<MetaFieldDefinition[]>([])
+
+const blockFormData = ref({
+  name: '',
+  type: 'task',
+  data: {} as Record<string, unknown>,
+  schedule: null as any
+})
+const blockMetaFields = ref<MetaFieldDefinition[]>([])
+
+const showBlockSchedule = ref(false)
+const blockScheduleType = ref<'fixed' | 'interval' | 'weekly'>('fixed')
+const scheduleDate = ref('')
+const scheduleTime = ref('')
+const scheduleIntervalHours = ref('')
+const scheduleStartDate = ref('')
+const scheduleStartTime = ref('')
+const scheduleDays = ref<string[]>([])
+const workflowSteps = ref<{ title: string; description: string }[]>([{ title: '', description: '' }])
 
 watch(() => props.editingCategory, (cat) => {
   if (cat) {
     editingCategoryLocal.value = cat
     categoryFormData.value = { name: cat.name, icon: cat.icon ?? '' }
     activeTab.value = 'category'
-  } else {
-    categoryFormData.value = { name: '', icon: '' }
   }
 }, { immediate: true })
 
-watch(() => props.editingBlock, (block) => {
-  if (block) {
-    emit('blockUpdated', block)
-    showToast('Bloque actualizado', 'success')
+watch(() => props.selectedEntity, (entity) => {
+  if (entity && !editingEntity.value) {
+    editingEntity.value = entity
+    entityFormData.value = {
+      name: entity.name,
+      description: entity.description || '',
+      type: entity.type || 'project',
+      category_id: entity.category_id,
+      metadata: entity.metadata || {}
+    }
+    initEntityMetaFields()
   }
 }, { immediate: true })
+
+const initEntityMetaFields = () => {
+  const values = entityFormData.value.metadata
+  const keys = Object.keys(values)
+  if (keys.length > 0) {
+    entityMetaFields.value = keys.map(key => {
+      const value = values[key]
+      let type: MetaFieldDefinition['type'] = 'string'
+      if (value === true || value === false) type = 'boolean'
+      else if (typeof value === 'number') type = 'number'
+      else if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) type = 'date'
+      return { key, type }
+    })
+  }
+}
 
 const showMessage = (type: 'success' | 'error', text: string) => {
   message.value = { type, text }
@@ -101,14 +148,15 @@ const handleEntitySubmit = async () => {
   }
 }
 
-const handleBlockSubmit = async (data: { name: string; type: string; data?: Record<string, unknown>; schedule?: { type: 'fixed' | 'interval' | 'weekly'; time?: string; intervalHours?: number; daysOfWeek?: string[]; date?: string; startDate?: string } }) => {
+const handleBlockSubmit = async () => {
   try {
     if (props.selectedEntity) {
+      const schedule = buildSchedule()
       await blocksStore.createBlock({
-        name: data.name,
-        type: data.type,
-        data: data.data,
-        schedule: data.schedule,
+        name: blockFormData.value.name,
+        type: blockFormData.value.type,
+        data: blockFormData.value.type === 'workflow' ? { steps: workflowSteps.value } : blockFormData.value.data,
+        schedule,
         entity_id: props.selectedEntity.id,
       })
       showMessage('success', 'Bloque creado')
@@ -119,170 +167,275 @@ const handleBlockSubmit = async (data: { name: string; type: string; data?: Reco
     showMessage('error', 'Error al crear bloque')
   }
 }
+
+const buildSchedule = () => {
+  if (!showBlockSchedule.value) return null
+  if (blockScheduleType.value === 'fixed') {
+    if (!scheduleDate.value) return null
+    return { type: 'fixed', date: scheduleDate.value + (scheduleTime.value ? 'T' + scheduleTime.value : ''), time: scheduleTime.value || undefined }
+  }
+  if (blockScheduleType.value === 'interval') {
+    if (!scheduleIntervalHours.value) return null
+    const startDateValue = scheduleStartDate.value ? new Date(scheduleStartDate.value + (scheduleStartTime.value ? 'T' + scheduleStartTime.value + ':00' : '')).toISOString() : undefined
+    return { type: 'interval', intervalHours: parseInt(scheduleIntervalHours.value), startDate: startDateValue, time: scheduleTime.value || undefined }
+  }
+  if (blockScheduleType.value === 'weekly') {
+    if (scheduleDays.value.length === 0) return null
+    return { type: 'weekly', daysOfWeek: scheduleDays.value, time: scheduleTime.value || undefined }
+  }
+  return null
+}
+
+const toggleDay = (day: string) => {
+  if (scheduleDays.value.includes(day)) {
+    scheduleDays.value = scheduleDays.value.filter(d => d !== day)
+  } else {
+    scheduleDays.value = [...scheduleDays.value, day]
+  }
+}
+
+const addWorkflowStep = () => { workflowSteps.value = [...workflowSteps.value, { title: '', description: '' }] }
+const removeWorkflowStep = (index: number) => { workflowSteps.value = workflowSteps.value.filter((_, i) => i !== index) }
+const updateWorkflowStep = (index: number, field: 'title' | 'description', value: string) => {
+  const updated = [...workflowSteps.value]
+  updated[index] = { ...updated[index], [field]: value }
+  workflowSteps.value = updated
+}
+
+const handleEntityMetaChange = (values: Record<string, unknown>) => {
+  entityFormData.value.metadata = values
+}
+
+const handleBlockMetaChange = (values: Record<string, unknown>) => {
+  blockFormData.value.data = values
+}
+
+const blockTypes = [
+  { value: 'task', label: 'Tarea', icon: '✓' },
+  { value: 'reminder', label: 'Recordatorio', icon: '🔔' },
+  { value: 'payment', label: 'Pago', icon: '💰' },
+  { value: 'workflow', label: 'Flujo', icon: '📋' },
+  { value: 'note', label: 'Nota', icon: '📝' },
+]
 </script>
 
 <template>
-  <div class="p-2 relative">
+  <div class="p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl max-h-[85vh] overflow-y-auto">
     <button
       v-if="activeTab"
       type="button"
       @click="closePanel"
-      class="absolute top-2 right-2 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors z-10"
+      class="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors z-10"
     >
       ✕
     </button>
 
-    <div v-if="!activeTab" class="flex gap-2">
+    <div v-if="!activeTab" class="flex flex-col gap-2">
       <button
         type="button"
-        @click="activeTab = 'entity'"
-        class="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/20 transition-all"
+        @click="activeTab = 'entity'; editingEntity = null; entityFormData = { name: '', description: '', type: 'project', category_id: null, metadata: {} }; entityMetaFields = []"
+        class="flex items-center gap-3 px-5 py-3 text-sm font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-200 dark:shadow-indigo-900/30 transition-all"
       >
-        ➕
-        Entidad
+        <span class="text-lg">➕</span>
+        <span>Nueva Entidad</span>
       </button>
       <button
         type="button"
         @click="activeTab = 'category'"
-        class="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-200 dark:shadow-emerald-900/20 transition-all"
+        class="flex items-center gap-3 px-5 py-3 text-sm font-bold rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-200 dark:shadow-emerald-900/30 transition-all"
       >
-        📁➕
-        Categoría
+        <span class="text-lg">📁</span>
+        <span>Nueva Categoría</span>
       </button>
       <button
         type="button"
         @click="activeTab = 'block'"
         :disabled="!selectedEntity"
-        class="flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none shadow-lg shadow-orange-200 dark:shadow-orange-900/20 transition-all"
+        class="flex items-center gap-3 px-5 py-3 text-sm font-bold rounded-xl bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-40 disabled:cursor-not-allowed shadow-lg shadow-orange-200 dark:shadow-orange-900/30 transition-all"
       >
-        🧱
-        Bloque
+        <span class="text-lg">🧱</span>
+        <span>Nuevo Bloque</span>
       </button>
     </div>
 
-    <div
-      v-if="message"
-      :class="`p-3 mb-3 rounded-xl text-sm font-medium animate-fade-in flex items-center gap-2 ${
-        message.type === 'success'
-          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800'
-          : 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800'
-      }`"
-    >
+    <div v-if="message" :class="`p-3 mb-4 rounded-xl text-sm font-medium animate-fade-in flex items-center gap-2 ${
+      message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-400'
+    }`">
+      <span v-if="message.type === 'success'">✓</span>
       {{ message.text }}
     </div>
 
-    <div v-if="activeTab === 'category'" class="mt-4">
-      <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">
-        {{ editingCategoryLocal ? 'Editar Categoría' : 'Nueva Categoría' }}
-      </h3>
-      <form @submit.prevent="handleCategorySubmit" class="space-y-3">
-        <input
-          v-model="categoryFormData.name"
-          type="text"
-          placeholder="Nombre de categoría"
-          class="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          required
-        />
-        <input
-          v-model="categoryFormData.icon"
-          type="text"
-          placeholder="Icono (ej: 📁)"
-          class="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
-        <div class="flex gap-2">
-          <button
-            type="button"
-            @click="closePanel"
-            class="flex-1 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            class="flex-1 py-2 px-3 text-xs font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-          >
-            Guardar
+    <div v-if="activeTab === 'category'" class="mt-2 space-y-4">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-slate-700 dark:text-slate-200">{{ editingCategoryLocal ? 'Editar Categoría' : 'Nueva Categoría' }}</h3>
+        <button type="button" @click="closePanel" class="text-slate-400 hover:text-slate-600">← Volver</button>
+      </div>
+      <form @submit.prevent="handleCategorySubmit" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase">Nombre</label>
+          <input v-model="categoryFormData.name" type="text" placeholder="Nombre de categoría" class="w-full px-4 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500" required />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase">Icono</label>
+          <input v-model="categoryFormData.icon" type="text" placeholder="📁" class="w-full px-4 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500" />
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="button" @click="closePanel" class="flex-1 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-xl">Cancelar</button>
+          <button type="submit" class="flex-1 py-2.5 text-sm font-bold bg-indigo-600 text-white rounded-xl hover:bg-indigo-700">
+            {{ editingCategoryLocal ? 'Guardar' : 'Crear' }}
           </button>
         </div>
       </form>
     </div>
 
-    <div v-if="activeTab === 'entity'" class="mt-4">
-      <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">
-        {{ editingEntity ? 'Editar Entidad' : 'Nueva Entidad' }}
-      </h3>
-      <form @submit.prevent="handleEntitySubmit" class="space-y-3">
-        <input
-          v-model="entityFormData.name"
-          type="text"
-          placeholder="Nombre de entidad"
-          class="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          required
-        />
-        <textarea
-          v-model="entityFormData.description"
-          placeholder="Descripción"
-          rows="2"
-          class="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        />
-        <select
-          v-model="entityFormData.category_id"
-          class="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-        >
-          <option :value="null">Sin categoría</option>
-          <option v-for="cat in categoriesStore.categories" :key="cat.id" :value="cat.id">
-            {{ cat.name }}
-          </option>
-        </select>
-        <div class="flex gap-2">
-          <button
-            type="button"
-            @click="closePanel"
-            class="flex-1 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            class="flex-1 py-2 px-3 text-xs font-medium bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-          >
-            Guardar
+    <div v-if="activeTab === 'entity'" class="mt-2 space-y-4">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-slate-700 dark:text-slate-200">{{ editingEntity ? 'Editar Entidad' : 'Nueva Entidad' }}</h3>
+        <button type="button" @click="closePanel" class="text-slate-400 hover:text-slate-600">← Volver</button>
+      </div>
+      <form @submit.prevent="handleEntitySubmit" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase">Categoría</label>
+          <select v-model="entityFormData.category_id" class="w-full px-4 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500">
+            <option :value="null">Sin categoría</option>
+            <option v-for="cat in categoriesStore.categories" :key="cat.id" :value="cat.id">{{ cat.icon }} {{ cat.name }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase">Nombre *</label>
+          <input v-model="entityFormData.name" type="text" placeholder="Nombre de entidad" class="w-full px-4 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500" required />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase">Descripción</label>
+          <textarea v-model="entityFormData.description" placeholder="Descripción breve" rows="2" class="w-full px-4 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 focus:ring-2 focus:ring-indigo-500"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase">Tipo</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              v-for="type in [{value:'trip',label:'Viaje',icon:'✈️'},{value:'medication',label:'Medicación',icon:'💊'},{value:'finance',label:'Finanzas',icon:'💰'},{value:'home',label:'Hogar',icon:'🏠'},{value:'restaurant',label:'Restaurante',icon:'🍽️'},{value:'client',label:'Cliente',icon:'👤'}]"
+              :key="type.value"
+              type="button"
+              @click="entityFormData.type = type.value"
+              class="flex items-center gap-2 px-3 py-2 rounded-xl border text-sm font-medium transition-all"
+              :class="entityFormData.type === type.value ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30' : 'border-slate-200 dark:border-slate-600'"
+            >
+              <span>{{ type.icon }}</span>
+              <span>{{ type.label }}</span>
+            </button>
+          </div>
+        </div>
+        <div class="pt-3 border-t border-slate-100 dark:border-slate-700">
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 uppercase">Campos Personalizados</label>
+          <div class="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl max-h-48 overflow-y-auto">
+            <MetaFieldsEditor
+              :fields="entityMetaFields"
+              :values="entityFormData.metadata"
+              :editable="true"
+              @change="handleEntityMetaChange"
+              @fields-change="(f) => entityMetaFields = f"
+            />
+          </div>
+        </div>
+        <div class="flex gap-3 pt-2">
+          <button type="button" @click="closePanel" class="flex-1 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-xl">Cancelar</button>
+          <button type="submit" class="flex-1 py-2.5 text-sm font-bold bg-indigo-600 text-white rounded-xl hover:bg-indigo-700">
+            {{ editingEntity ? 'Guardar' : 'Crear' }}
           </button>
         </div>
       </form>
     </div>
 
-    <div v-if="activeTab === 'block' && selectedEntity" class="mt-4">
-      <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Nuevo Bloque</h3>
-      <form @submit.prevent="handleBlockSubmit({ name: '', type: 'task' })" class="space-y-3">
-        <input
-          type="text"
-          placeholder="Nombre del bloque"
-          class="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          required
-        />
-        <select class="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <option value="task">Tarea</option>
-          <option value="reminder">Recordatorio</option>
-          <option value="payment">Pago</option>
-          <option value="workflow">Flujo</option>
-          <option value="step">Paso</option>
-          <option value="note">Nota</option>
-        </select>
-        <div class="flex gap-2">
-          <button
-            type="button"
-            @click="closePanel"
-            class="flex-1 py-2 text-xs font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800"
-          >
-            Cancelar
+    <div v-if="activeTab === 'block' && selectedEntity" class="mt-2 space-y-4">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-slate-700 dark:text-slate-200">Nuevo Bloque</h3>
+        <button type="button" @click="closePanel" class="text-slate-400 hover:text-slate-600">← Volver</button>
+      </div>
+      <form @submit.prevent="handleBlockSubmit" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase">Tipo</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button
+              v-for="type in blockTypes"
+              :key="type.value"
+              type="button"
+              @click="blockFormData.type = type.value"
+              class="flex flex-col items-center gap-1 p-3 rounded-xl border text-sm font-medium transition-all"
+              :class="blockFormData.type === type.value ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/30' : 'border-slate-200 dark:border-slate-600'"
+            >
+              <span class="text-xl">{{ type.icon }}</span>
+              <span>{{ type.label }}</span>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase">Nombre</label>
+          <input v-model="blockFormData.name" type="text" placeholder="Nombre del bloque" class="w-full px-4 py-2.5 text-sm border border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-900 focus:ring-2 focus:ring-orange-500" required />
+        </div>
+
+        <div v-if="blockFormData.type === 'workflow'" class="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+          <div class="flex items-center justify-between mb-3">
+            <span class="text-sm font-bold text-purple-700 dark:text-purple-300">Pasos del Flujo</span>
+            <button type="button" @click="addWorkflowStep" class="px-3 py-1 bg-purple-600 text-white rounded-lg text-xs font-medium">+ Agregar paso</button>
+          </div>
+          <div v-for="(step, index) in workflowSteps" :key="index" class="mb-3 p-3 bg-white dark:bg-slate-800 rounded-xl">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="w-6 h-6 rounded-full bg-purple-100 text-purple-700 text-xs font-bold flex items-center justify-center">{{ index + 1 }}</span>
+              <input type="text" :value="step.title" @input="(e) => updateWorkflowStep(index, 'title', (e.target as HTMLInputElement).value)" placeholder="Título del paso" class="flex-1 px-3 py-1.5 text-sm border rounded-lg bg-white dark:bg-slate-700" />
+              <button v-if="workflowSteps.length > 1" type="button" @click="removeWorkflowStep(index)" class="p-1.5 text-red-400 hover:bg-red-50 rounded-lg">🗑️</button>
+            </div>
+            <textarea :value="step.description" @input="(e) => updateWorkflowStep(index, 'description', (e.target as HTMLTextAreaElement).value)" placeholder="Descripción (opcional)" rows="2" class="w-full px-3 py-1.5 text-sm border rounded-lg bg-white dark:bg-slate-700"></textarea>
+          </div>
+        </div>
+
+        <div class="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl">
+          <button type="button" @click="showBlockSchedule = !showBlockSchedule" class="flex items-center gap-2 text-sm font-semibold" :class="showBlockSchedule ? 'text-emerald-600' : 'text-amber-600'">
+            <span>{{ showBlockSchedule ? '✓' : '+' }}</span>
+            <span>Programación</span>
+            <span v-if="showBlockSchedule" class="px-2 py-0.5 bg-emerald-500 text-white text-xs rounded-full">ACTIVA</span>
           </button>
-          <button
-            type="submit"
-            class="flex-1 py-2 px-3 text-xs font-medium bg-orange-600 text-white rounded-lg hover:bg-orange-700"
-          >
-            Crear
-          </button>
+
+          <div v-if="showBlockSchedule" class="mt-3 space-y-3">
+            <select v-model="blockScheduleType" class="w-full px-3 py-2 text-sm border rounded-xl bg-white dark:bg-slate-800">
+              <option value="fixed">Fecha específica</option>
+              <option value="interval">Cada X horas</option>
+              <option value="weekly">Días de la semana</option>
+            </select>
+            <div v-if="blockScheduleType === 'fixed'" class="grid grid-cols-2 gap-2">
+              <input type="date" v-model="scheduleDate" class="px-3 py-2 text-sm border rounded-xl bg-white dark:bg-slate-800" />
+              <input type="time" v-model="scheduleTime" class="px-3 py-2 text-sm border rounded-xl bg-white dark:bg-slate-800" />
+            </div>
+            <div v-if="blockScheduleType === 'interval'" class="space-y-2">
+              <input type="number" v-model="scheduleIntervalHours" placeholder="Horas entre ejecuciones" class="w-full px-3 py-2 text-sm border rounded-xl bg-white dark:bg-slate-800" />
+              <div class="grid grid-cols-2 gap-2">
+                <input type="date" v-model="scheduleStartDate" class="px-3 py-2 text-sm border rounded-xl bg-white dark:bg-slate-800" />
+                <input type="time" v-model="scheduleStartTime" class="px-3 py-2 text-sm border rounded-xl bg-white dark:bg-slate-800" />
+              </div>
+            </div>
+            <div v-if="blockScheduleType === 'weekly'" class="space-y-2">
+              <div class="flex flex-wrap gap-1">
+                <button v-for="(day, i) in ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']" :key="day" type="button" @click="toggleDay(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][i])" class="px-3 py-1.5 text-xs rounded-lg font-medium transition-all" :class="scheduleDays.includes(['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][i]) ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-slate-800 border'">{{ day }}</button>
+              </div>
+              <input type="time" v-model="scheduleTime" class="w-full px-3 py-2 text-sm border rounded-xl bg-white dark:bg-slate-800" />
+            </div>
+          </div>
+        </div>
+
+        <div v-if="blockFormData.type !== 'workflow'" class="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 uppercase">Datos Extra</label>
+          <MetaFieldsEditor
+            :fields="blockMetaFields"
+            :values="blockFormData.data"
+            :editable="true"
+            @change="handleBlockMetaChange"
+            @fields-change="(f) => blockMetaFields = f"
+          />
+        </div>
+
+        <div class="flex gap-3 pt-2">
+          <button type="button" @click="closePanel" class="flex-1 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-xl">Cancelar</button>
+          <button type="submit" class="flex-1 py-2.5 text-sm font-bold bg-orange-600 text-white rounded-xl hover:bg-orange-700">Crear Bloque</button>
         </div>
       </form>
     </div>

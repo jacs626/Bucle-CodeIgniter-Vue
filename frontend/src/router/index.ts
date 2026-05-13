@@ -10,13 +10,7 @@ const routes: RouteRecordRaw[] = [
         path: '',
         name: 'dashboard',
         component: () => import('@/views/BucleView.vue'),
-        meta: { title: 'Panel' },
-      },
-      {
-        path: 'categories',
-        name: 'categories',
-        component: () => import('@/views/CategoriesView.vue'),
-        meta: { title: 'Categorías' },
+        meta: { title: 'Bucle' },
       },
       {
         path: 'entities',
@@ -31,6 +25,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Bloques' },
       },
       {
+        path: 'calendar',
+        name: 'calendar',
+        component: () => import('@/views/CalendarView.vue'),
+        meta: { title: 'Calendario' },
+      },
+      {
+        path: 'notifications',
+        name: 'notifications',
+        component: () => import('@/views/NotificationsView.vue'),
+        meta: { title: 'Notificaciones' },
+      },
+      {
         path: 'history',
         name: 'history',
         component: () => import('@/views/HistoryView.vue'),
@@ -43,10 +49,10 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'Documentos' },
       },
       {
-        path: 'notifications',
-        name: 'notifications',
-        component: () => import('@/views/DashboardView.vue'),
-        meta: { title: 'Notificaciones' },
+        path: 'categories',
+        name: 'categories',
+        component: () => import('@/views/CategoriesView.vue'),
+        meta: { title: 'Categorías' },
       },
     ],
   },

@@ -6,6 +6,7 @@ import { useBlocksStore } from "@/stores/blocksStore";
 import { useHistoryStore } from "@/stores/historyStore";
 import { useToast } from "@/composables/useToast";
 import EntitySelector from "@/components/common/EntitySelector.vue";
+import EntityDetailPanel from "@/components/common/EntityDetailPanel.vue";
 import CRUDPanel from "@/components/common/CRUDPanel.vue";
 import BlockCard from "@/components/blocks/BlockCard.vue";
 import BlockDetailPanel from "@/components/blocks/BlockDetailPanel.vue";
@@ -46,7 +47,7 @@ onMounted(async () => {
       categoriesStore.fetchCategories(),
       entitiesStore.fetchEntities(),
       blocksStore.fetchBlocks(),
-      historyStore.fetchHistories(),
+      historyStore.fetchHistory(),
     ]);
     const firstCategory = categoriesStore.categories[0];
     if (firstCategory) {
@@ -139,6 +140,22 @@ const handleBlockCreated = async () => {
   showToast("Bloque creado correctamente", "success");
 };
 
+const handleEditEntity = () => {
+  editingCategory.value = selectedEntity.value as unknown as Category;
+};
+
+const handleDeleteEntity = async (entity: Entity) => {
+  if (confirm(`¿Eliminar "${entity.name}"?`)) {
+    try {
+      await entitiesStore.deleteEntity(entity.id)
+      showToast('Entidad eliminada', 'success')
+      selectedEntityId.value = null
+    } catch {
+      showToast('Error al eliminar entidad', 'error')
+    }
+  }
+};
+
 const handleCloseEdit = () => {
   editingCategory.value = null;
   editingBlock.value = null;
@@ -175,6 +192,14 @@ const typeGroups = computed<TypeGroups>(() => {
       @entity-select="handleEntitySelect"
       @category-select="handleCategorySelect"
       @category-edit="handleCategoryEdit"
+    />
+
+    <EntityDetailPanel
+      v-if="selectedEntity"
+      :entity="selectedEntity"
+      :blocks="entityBlocks"
+      @edit="handleEditEntity"
+      @delete="handleDeleteEntity"
     />
 
     <div class="flex-1 flex">
@@ -331,22 +356,10 @@ const typeGroups = computed<TypeGroups>(() => {
       :block="selectedBlock"
       :entity="selectedEntity"
       :all-blocks="workflowBlocks"
-      :history="historyStore.histories"
+      :history="historyStore.history"
       @close="handleCloseBlockDetail"
       @refresh-history="handleRefreshHistory"
       @mark-done="handleMarkBlockDone"
     />
   </div>
-
-  <BlockDetailPanel
-    v-if="selectedBlock"
-    class="fixed right-0 top-0 bottom-0 z-50 shadow-2xl"
-    :block="selectedBlock"
-    :entity="selectedEntity"
-    :all-blocks="workflowBlocks"
-    :history="historyStore.histories"
-    @close="handleCloseBlockDetail"
-    @refresh-history="handleRefreshHistory"
-    @mark-done="handleMarkBlockDone"
-  />
 </template>

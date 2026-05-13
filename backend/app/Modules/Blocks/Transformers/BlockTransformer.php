@@ -8,13 +8,23 @@ class BlockTransformer
 {
     public function transform(Block $block): array
     {
+        $data = $block->data;
+        if (is_string($data)) {
+            $data = json_decode($data, true);
+        }
+
+        $schedule = $block->schedule;
+        if (is_string($schedule)) {
+            $schedule = json_decode($schedule, true);
+        }
+
         return [
             'id' => $block->id,
             'entity_id' => $block->entity_id,
             'name' => $block->name,
             'type' => $block->type,
-            'data' => $block->data,
-            'schedule' => $block->schedule,
+            'data' => $data,
+            'schedule' => $schedule,
             'parent_block_id' => $block->parent_block_id,
             'order_index' => $block->order_index,
             'is_active' => $block->is_active,
