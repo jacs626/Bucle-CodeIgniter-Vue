@@ -104,6 +104,12 @@ const handleBlockClick = (block: Block) => {
   }
 };
 
+const handleBlockEditFromDetail = (block: Block) => {
+  editingBlock.value = block;
+  selectedBlock.value = null;
+  detailPanelOpen && (detailPanelOpen.value = false);
+};
+
 const handleCloseBlockDetail = () => {
   selectedBlock.value = null;
   detailPanelOpen && (detailPanelOpen.value = false);
@@ -140,9 +146,31 @@ const handleEntityUpdated = async (entity: Entity) => {
   selectedEntityId.value = entity.id;
 };
 
+const handleEntityDeleted = async (entityId: number) => {
+  await entitiesStore.fetchEntities();
+  selectedEntityId.value = null;
+};
+
+const handleCategoryDeleted = async (categoryId: number) => {
+  await categoriesStore.fetchCategories();
+  await entitiesStore.fetchEntities();
+  await blocksStore.fetchBlocks();
+  selectedCategoryId.value = null;
+};
+
 const handleBlockCreated = async () => {
   await blocksStore.fetchBlocks();
   showToast("Bloque creado correctamente", "success");
+};
+
+const handleBlockUpdated = async (block: Block) => {
+  await blocksStore.fetchBlocks();
+  showToast("Bloque actualizado correctamente", "success");
+};
+
+const handleBlockDeleted = async (blockId: number) => {
+  await blocksStore.fetchBlocks();
+  showToast("Bloque eliminado correctamente", "success");
 };
 
 const handleEditEntity = () => {
@@ -220,9 +248,13 @@ const typeGroups = computed<TypeGroups>(() => {
             :editing-block="editingBlock"
             @entity-created="handleEntityCreated"
             @entity-updated="handleEntityUpdated"
+            @entity-deleted="handleEntityDeleted"
             @category-created="handleCategoryCreated"
             @category-updated="handleCategoryUpdated"
+            @category-deleted="handleCategoryDeleted"
             @block-created="handleBlockCreated"
+            @block-updated="handleBlockUpdated"
+            @block-deleted="handleBlockDeleted"
             @close="handleCloseEdit"
           />
 
@@ -365,6 +397,7 @@ const typeGroups = computed<TypeGroups>(() => {
       @close="handleCloseBlockDetail"
       @refresh-history="handleRefreshHistory"
       @mark-done="handleMarkBlockDone"
+      @edit="handleBlockEditFromDetail"
     />
   </div>
 </template>

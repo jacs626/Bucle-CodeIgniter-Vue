@@ -74,6 +74,11 @@ class BlockService
 
     public function delete(int $id): bool
     {
+        $childBlocks = $this->blockModel->where('parent_block_id', $id)->findAll();
+        foreach ($childBlocks as $child) {
+            $this->blockModel->delete($child->id);
+        }
+
         return $this->blockModel->delete($id);
     }
 

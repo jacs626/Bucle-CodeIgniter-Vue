@@ -5,17 +5,20 @@ namespace App\Modules\Entities\Services;
 use App\Modules\Entities\Models\EntityModel;
 use App\Modules\Entities\Entities\EntityData;
 use App\Modules\Entities\Transformers\EntityTransformer;
+use App\Modules\Blocks\Models\BlockModel;
 use CodeIgniter\Database\Exceptions\DatabaseException;
 
 class EntityService
 {
     protected EntityModel $entityModel;
     protected EntityTransformer $transformer;
+    protected BlockModel $blockModel;
 
     public function __construct()
     {
         $this->entityModel = new EntityModel();
         $this->transformer = new EntityTransformer();
+        $this->blockModel = new BlockModel();
     }
 
     public function getAll(): array
@@ -67,6 +70,11 @@ class EntityService
 
     public function delete(int $id): bool
     {
+        $blocks = $this->blockModel->where('entity_id', $id)->findAll();
+        foreach ($blocks as $block) {
+            $this->blockModel->delete($block->id);
+        }
+
         return $this->entityModel->delete($id);
     }
 

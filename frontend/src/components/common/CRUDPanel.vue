@@ -18,10 +18,13 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   (e: "entityCreated", entity: Entity): void;
   (e: "entityUpdated", entity: Entity): void;
+  (e: "entityDeleted", entityId: number): void;
   (e: "categoryCreated", category: Category): void;
   (e: "categoryUpdated", category: Category): void;
+  (e: "categoryDeleted", categoryId: number): void;
   (e: "blockCreated"): void;
   (e: "blockUpdated", block: Block): void;
+  (e: "blockDeleted", blockId: number): void;
   (e: "close"): void;
 }>();
 
@@ -72,6 +75,22 @@ watch(
       editingCategoryLocal.value = cat;
       categoryFormData.value = { name: cat.name, icon: cat.icon ?? "" };
       activeTab.value = "category";
+    }
+  },
+  { immediate: true },
+);
+
+watch(
+  () => props.editingBlock,
+  (block) => {
+    if (block) {
+      blockFormData.value = {
+        name: block.name,
+        type: block.type,
+        data: (block.data as Record<string, unknown>) || {},
+        schedule: block.schedule,
+      };
+      activeTab.value = "block";
     }
   },
   { immediate: true },
@@ -160,24 +179,73 @@ const handleEntitySubmit = async () => {
 
 const handleBlockSubmit = async () => {
   try {
-    if (props.selectedEntity) {
-      const schedule = buildSchedule();
+    if (!props.selectedEntity && !props.editingBlock) return;
+
+    const schedule = buildSchedule();
+    const blockData = {
+      name: blockFormData.value.name,
+      type: blockFormData.value.type,
+      data:
+        blockFormData.value.type === "workflow"
+          ? { steps: workflowSteps.value }
+          : blockFormData.value.data,
+      schedule,
+    };
+
+    if (props.editingBlock) {
+      await blocksStore.updateBlock(props.editingBlock.id, blockData);
+      showMessage("success", "Bloque actualizado");
+      emit("blockUpdated", props.editingBlock);
+    } else {
       await blocksStore.createBlock({
-        name: blockFormData.value.name,
-        type: blockFormData.value.type,
-        data:
-          blockFormData.value.type === "workflow"
-            ? { steps: workflowSteps.value }
-            : blockFormData.value.data,
-        schedule,
-        entity_id: props.selectedEntity.id,
+        ...blockData,
+        entity_id: props.selectedEntity!.id,
       });
       showMessage("success", "Bloque creado");
       emit("blockCreated");
-      closePanel();
     }
+    closePanel();
   } catch {
-    showMessage("error", "Error al crear bloque");
+    showMessage("error", "Error al guardar bloque");
+  }
+};
+
+const handleCategoryDelete = async () => {
+  if (!editingCategoryLocal.value) return;
+  if (!confirm(`¿Eliminar "${editingCategoryLocal.value.name}"?`)) return;
+  try {
+    await categoriesStore.deleteCategory(editingCategoryLocal.value.id);
+    showMessage("success", "Categoría eliminada");
+    emit("categoryDeleted", editingCategoryLocal.value.id);
+    closePanel();
+  } catch {
+    showMessage("error", "Error al eliminar categoría");
+  }
+};
+
+const handleEntityDelete = async () => {
+  if (!editingEntity.value) return;
+  if (!confirm(`¿Eliminar "${editingEntity.value.name}"?`)) return;
+  try {
+    await entitiesStore.deleteEntity(editingEntity.value.id);
+    showMessage("success", "Entidad eliminada");
+    emit("entityDeleted", editingEntity.value.id);
+    closePanel();
+  } catch {
+    showMessage("error", "Error al eliminar entidad");
+  }
+};
+
+const handleBlockDelete = async () => {
+  if (!props.editingBlock) return;
+  if (!confirm(`¿Eliminar "${props.editingBlock.name}"?`)) return;
+  try {
+    await blocksStore.deleteBlock(props.editingBlock.id);
+    showMessage("success", "Bloque eliminado");
+    emit("blockDeleted", props.editingBlock.id);
+    closePanel();
+  } catch {
+    showMessage("error", "Error al eliminar bloque");
   }
 };
 
@@ -355,6 +423,14 @@ const blockTypes = [
         </div>
         <div class="flex gap-3 pt-2">
           <button
+            v-if="editingCategoryLocal"
+            type="button"
+            @click="handleCategoryDelete"
+            class="py-2.5 px-4 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-xl"
+          >
+            Eliminar
+          </button>
+          <button
             type="button"
             @click="closePanel"
             class="flex-1 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-xl"
@@ -467,6 +543,14 @@ const blockTypes = [
           </div>
         </div>
         <div class="flex gap-3 pt-2">
+          <button
+            v-if="editingEntity"
+            type="button"
+            @click="handleEntityDelete"
+            class="py-2.5 px-4 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-xl"
+          >
+            Eliminar
+          </button>
           <button
             type="button"
             @click="closePanel"
@@ -711,6 +795,14 @@ const blockTypes = [
 
         <div class="flex gap-3 pt-2">
           <button
+            v-if="editingBlock"
+            type="button"
+            @click="handleBlockDelete"
+            class="py-2.5 px-4 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-xl"
+          >
+            Eliminar
+          </button>
+          <button
             type="button"
             @click="closePanel"
             class="flex-1 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 rounded-xl"
@@ -721,7 +813,7 @@ const blockTypes = [
             type="submit"
             class="flex-1 py-2.5 text-sm font-bold bg-orange-600 text-white rounded-xl hover:bg-orange-700"
           >
-            Crear Bloque
+            {{ editingBlock ? "Guardar" : "Crear" }}
           </button>
         </div>
       </form>

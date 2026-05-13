@@ -18,6 +18,12 @@ interface Props {
 
 const props = defineProps<Props>()
 
+const emit = defineEmits<{
+  (e: "close"): void;
+  (e: "refresh-history"): void;
+  (e: "mark-done", block: Block): void;
+  (e: "edit", block: Block): void;
+}>()
 const expandedSteps = ref(false)
 const workflowStack = ref<string[]>([])
 
@@ -149,11 +155,15 @@ const handleGoBack = () => {
 }
 
 const handleToggleStep = () => {
-  props.onRefreshHistory?.()
+  emit('refresh-history')
 }
 
 const handleMarkDone = () => {
-  props.onMarkDone?.(props.block!)
+  emit('mark-done', props.block!)
+}
+
+const handleEdit = () => {
+  emit('edit', props.block!)
 }
 
 const blockTitle = computed(() => {
@@ -163,18 +173,43 @@ const blockTitle = computed(() => {
 const blockDescription = computed(() => {
   return props.block?.data?.description as string || ''
 })
+
+const blockMetadataEntries = computed(() => {
+  if (!props.block?.data) return []
+  const data = props.block.data
+  if (typeof data !== 'object' || Array.isArray(data)) return []
+  return Object.entries(data as Record<string, unknown>).filter(([key, v]) =>
+    v !== null && v !== undefined && v !== '' && key !== 'title' && key !== 'description' && key !== 'steps'
+  )
+})
+
+const formatValue = (value: unknown): string => {
+  if (value === null || value === undefined) return ''
+  if (typeof value === 'boolean') return value ? 'Si' : 'No'
+  if (typeof value === 'number') return value.toLocaleString()
+  return String(value)
+}
 </script>
 
 <template>
   <div v-if="block" class="h-full w-96 flex flex-col bg-white dark:bg-slate-800 shadow-xl border-l border-slate-200 dark:border-slate-700">
     <div class="p-5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
       <h2 class="font-bold text-lg text-slate-800 dark:text-white">Detalles</h2>
-      <button
-        @click="onClose"
-        class="p-2 text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
-      >
-        ✕
-      </button>
+      <div class="flex items-center gap-2">
+        <button
+          @click="handleEdit"
+          class="p-2 text-slate-400 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-colors"
+          title="Editar"
+        >
+          ✎
+        </button>
+        <button
+          @click="emit('close')"
+          class="p-2 text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
+        >
+          ✕
+        </button>
+      </div>
     </div>
 
     <div class="flex-1 overflow-y-auto p-5 space-y-5">
@@ -183,6 +218,15 @@ const blockDescription = computed(() => {
         <p v-if="blockDescription" class="text-sm text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
           {{ blockDescription }}
         </p>
+        <div v-if="blockMetadataEntries.length > 0" class="flex flex-wrap gap-1 mt-2">
+          <span
+            v-for="[key, value] in blockMetadataEntries"
+            :key="key"
+            class="px-2 py-0.5 text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 rounded"
+          >
+            <span class="text-slate-400 dark:text-slate-500">{{ key }}:</span> {{ formatValue(value) }}
+          </span>
+        </div>
       </div>
 
       <div v-if="isWorkflow && currentSteps.length > 0" class="p-4 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/30 dark:to-indigo-900/30 rounded-2xl border border-purple-100 dark:border-purple-800">
