@@ -12,6 +12,7 @@ import BlockCard from "@/components/blocks/BlockCard.vue";
 import BlockDetailPanel from "@/components/blocks/BlockDetailPanel.vue";
 import type { Category, Entity, Block } from "@/types";
 import { idsMatch, toNum } from "@/utils/id";
+import { getTimeUntilNextExecution, formatTimeRemaining } from "@/types";
 
 const detailPanelOpen = inject<{ value: boolean }>("detailPanelOpen");
 
@@ -210,24 +211,32 @@ const handleCloseEdit = () => {
   editingBlock.value = null;
 };
 
-interface TypeGroups {
-  workflow: Block[];
-  task: Block[];
-  reminder: Block[];
-  payment: Block[];
-  other: Block[];
-}
+const isRepeatingBlock = (block: Block) => {
+  return block.schedule && (block.schedule.type === "interval" || block.schedule.type === "weekly");
+};
 
-const typeGroups = computed<TypeGroups>(() => {
-  return {
-    workflow: entityBlocks.value.filter((b) => b.type === "workflow" || b.type === "step"),
-    task: entityBlocks.value.filter((b) => b.type === "task"),
-    reminder: entityBlocks.value.filter((b) => b.type === "reminder"),
-    payment: entityBlocks.value.filter((b) => b.type === "payment"),
-    other: entityBlocks.value.filter(
-      (b) => !["workflow", "step", "task", "reminder", "payment"].includes(b.type),
-    ),
-  };
+const activeCyclicBlocks = computed(() => {
+  return entityBlocks.value
+    .filter((b) => b.is_active && isRepeatingBlock(b))
+    .sort((a, b) => {
+      const aTime = getTimeUntilNextExecution(a.schedule!);
+      const bTime = getTimeUntilNextExecution(b.schedule!);
+      if (!aTime?.nextExecution) return 1;
+      if (!bTime?.nextExecution) return -1;
+      return aTime.nextExecution.getTime() - bTime.nextExecution.getTime();
+    });
+});
+
+const activeOtherBlocks = computed(() => {
+  return entityBlocks.value
+    .filter((b) => b.is_active && !isRepeatingBlock(b))
+    .sort((a, b) => {
+      const aTime = getTimeUntilNextExecution(a.schedule!);
+      const bTime = getTimeUntilNextExecution(b.schedule!);
+      if (!aTime?.nextExecution) return 1;
+      if (!bTime?.nextExecution) return -1;
+      return aTime.nextExecution.getTime() - bTime.nextExecution.getTime();
+    });
 });
 </script>
 
@@ -274,112 +283,68 @@ const typeGroups = computed<TypeGroups>(() => {
             @close="handleCloseEdit"
           />
 
-          <div v-if="selectedEntity && entityBlocks.length > 0" class="space-y-6">
-            <div v-if="typeGroups.workflow.length > 0">
+          <div v-if="selectedEntity && (activeCyclicBlocks.length > 0 || activeOtherBlocks.length > 0)" class="space-y-6">
+            <div v-if="activeCyclicBlocks.length > 0">
               <div class="flex items-center gap-2 mb-3">
                 <span class="text-lg">🔄</span>
-                <h3 class="font-semibold text-slate-800 dark:text-white">Flujos de trabajo</h3>
-                <span
-                  class="px-2 py-0.5 text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full"
-                >
-                  {{ typeGroups.workflow.length }}
-                </span>
+                <h3 class="font-semibold text-slate-800 dark:text-white">Tus servicios en ciclo</h3>
               </div>
-              <div class="space-y-3">
-                <BlockCard
-                  v-for="block in typeGroups.workflow"
+              <div class="flex gap-4 overflow-x-auto pb-2 snap-x">
+                <div
+                  v-for="block in activeCyclicBlocks"
                   :key="block.id"
-                  :block="block"
+                  class="flex-shrink-0 w-40 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-xl p-3 border border-indigo-100 dark:border-indigo-800 cursor-pointer hover:shadow-md transition-shadow snap-start"
                   @click="handleBlockClick(block)"
-                  @edit="handleBlockEdit(block)"
-                />
+                >
+                  <div class="text-sm font-semibold text-indigo-800 dark:text-indigo-300 truncate">
+                    {{ block.name }}
+                  </div>
+                  <div class="text-xs text-indigo-600 dark:text-indigo-400 mt-1">
+                    <span v-if="block.schedule?.type === 'interval'">Cada {{ block.schedule.intervalHours }}h</span>
+                    <span v-else-if="block.schedule?.type === 'weekly'">
+                      {{ block.schedule.daysOfWeek?.map(d => d.slice(0, 3)).join(', ') }}
+                    </span>
+                  </div>
+                  <div class="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                    <span v-if="getTimeUntilNextExecution(block.schedule!)?.nextExecution">
+                      Próximo en {{ formatTimeRemaining(
+                        getTimeUntilNextExecution(block.schedule!).days,
+                        getTimeUntilNextExecution(block.schedule!).hours,
+                        getTimeUntilNextExecution(block.schedule!).minutes
+                      ) }}
+                    </span>
+                  </div>
+                  <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    {{ getTimeUntilNextExecution(block.schedule!)?.nextExecution?.toLocaleDateString('es-ES') }}
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div v-if="typeGroups.task.length > 0">
-              <div class="flex items-center gap-2 mb-3">
-                <span class="text-lg">✅</span>
-                <h3 class="font-semibold text-slate-800 dark:text-white">Tareas</h3>
-                <span
-                  class="px-2 py-0.5 text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full"
-                >
-                  {{ typeGroups.task.length }}
-                </span>
-              </div>
-              <div class="space-y-3">
-                <BlockCard
-                  v-for="block in typeGroups.task"
-                  :key="block.id"
-                  :block="block"
-                  @click="handleBlockClick(block)"
-                  @edit="handleBlockEdit(block)"
-                />
-              </div>
-            </div>
-
-            <div v-if="typeGroups.reminder.length > 0">
+            <div v-if="activeOtherBlocks.length > 0">
               <div class="flex items-center gap-2 mb-3">
                 <span class="text-lg">🔔</span>
-                <h3 class="font-semibold text-slate-800 dark:text-white">Recordatorios</h3>
-                <span
-                  class="px-2 py-0.5 text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full"
-                >
-                  {{ typeGroups.reminder.length }}
-                </span>
+                <h3 class="font-semibold text-slate-800 dark:text-white">Otros recordatorios</h3>
               </div>
-              <div class="space-y-3">
-                <BlockCard
-                  v-for="block in typeGroups.reminder"
+              <div class="space-y-2">
+                <div
+                  v-for="block in activeOtherBlocks"
                   :key="block.id"
-                  :block="block"
+                  class="flex items-center gap-3 p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                   @click="handleBlockClick(block)"
-                  @edit="handleBlockEdit(block)"
-                />
-              </div>
-            </div>
-
-            <div v-if="typeGroups.payment.length > 0">
-              <div class="flex items-center gap-2 mb-3">
-                <span class="text-lg">💰</span>
-                <h3 class="font-semibold text-slate-800 dark:text-white">Pagos</h3>
-                <span
-                  class="px-2 py-0.5 text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full"
                 >
-                  {{ typeGroups.payment.length }}
-                </span>
-              </div>
-              <div class="space-y-3">
-                <BlockCard
-                  v-for="block in typeGroups.payment"
-                  :key="block.id"
-                  :block="block"
-                  @click="handleBlockClick(block)"
-                  @edit="handleBlockEdit(block)"
-                />
-              </div>
-            </div>
-
-            <div v-if="typeGroups.other.length > 0">
-              <div class="flex items-center gap-2 mb-3">
-                <span class="text-lg">📋</span>
-                <h3 class="font-semibold text-slate-800 dark:text-white">Otros</h3>
-                <span
-                  class="px-2 py-0.5 text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full"
-                >
-                  {{ typeGroups.other.length }}
-                </span>
-              </div>
-              <div class="space-y-3">
-                <BlockCard
-                  v-for="block in typeGroups.other"
-                  :key="block.id"
-                  :block="block"
-                  @click="handleBlockClick(block)"
-                  @edit="handleBlockEdit(block)"
-                />
+                  <span class="text-lg flex-shrink-0">{{ block.type === 'task' ? '✅' : block.type === 'payment' ? '💰' : block.type === 'reminder' ? '🔔' : block.type === 'note' ? '📝' : '📋' }}</span>
+                  <span class="text-sm font-medium text-slate-700 dark:text-slate-300 truncate flex-1">{{ block.name }}</span>
+                  <span class="text-xs text-slate-500 dark:text-slate-400">
+                    <span v-if="block.schedule?.type === 'fixed'">Vence: {{ new Date(block.schedule.date!).toLocaleDateString('es-ES') }}</span>
+                    <span v-else-if="!block.schedule">Sin fecha</span>
+                  </span>
+                </div>
               </div>
             </div>
           </div>
+
+          
 
           <div
             v-else-if="selectedEntity && entityBlocks.length === 0"
