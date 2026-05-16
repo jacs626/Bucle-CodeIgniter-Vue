@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { useRoute } from "vue-router";
 import { useTheme } from "@/composables/useTheme";
+import AppLogo from "./AppLogo.vue";
 
 interface Props {
   isOpen?: boolean;
@@ -45,13 +46,7 @@ const isActive = (name: string) => route.name === name;
   >
     <div class="p-4 border-b border-slate-100 dark:border-slate-700">
       <div class="flex items-center gap-3" :class="isOpen ? '' : 'justify-center'">
-        <div
-          className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-md"
-        >
-          <span class="text-white text-lg">
-            <img src="/android-chrome-512x512.png" alt="Logo" class="w-8 h-8 object-contain" />
-          </span>
-        </div>
+        <AppLogo size="md" />
         <div v-if="isOpen" class="flex flex-col">
           <span class="font-bold text-lg text-slate-800 dark:text-white tracking-tight">Bucle</span>
           <span class="text-xs text-slate-500 dark:text-slate-400">Gestión inteligente</span>
