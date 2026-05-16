@@ -120,9 +120,25 @@ const handleRefreshHistory = async () => {
 };
 
 const handleMarkBlockDone = async () => {
+  const block = selectedBlock.value;
+  if (!block) return;
+
+  await historyStore.createHistory({
+    entity_id: block.entity_id,
+    block_id: block.id,
+    date: new Date().toISOString(),
+    status: "done",
+  });
+
+  const hasRepeatingSchedule = block.schedule && (block.schedule.type === "interval" || block.schedule.type === "weekly");
+  if (!hasRepeatingSchedule) {
+    await blocksStore.updateBlock(block.id, { ...block, is_active: false } as any);
+  }
+
   showToast("Bloque marcado como completado", "success");
   selectedBlock.value = null;
   await blocksStore.fetchBlocks();
+  await historyStore.fetchHistory();
 };
 
 const handleCategoryCreated = (category: Category) => {
