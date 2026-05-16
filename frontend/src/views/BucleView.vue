@@ -116,7 +116,7 @@ const handleCloseBlockDetail = () => {
 };
 
 const handleRefreshHistory = async () => {
-  await historyStore.fetchHistories();
+  await historyStore.fetchHistory();
 };
 
 const handleMarkBlockDone = async () => {

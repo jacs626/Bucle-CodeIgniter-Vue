@@ -149,9 +149,8 @@ const handleCategorySubmit = async () => {
       showMessage("success", `"${data.name}" actualizada`);
       emit("categoryUpdated", { ...editingCategoryLocal.value, ...data });
     } else {
-      const created = await categoriesStore.createCategory(data);
-      showMessage("success", `"${created?.name}" creada`);
-      emit("categoryCreated", created!);
+      await categoriesStore.createCategory(data);
+      showMessage("success", `"${data.name}" creada`);
     }
     closePanel();
   } catch {
@@ -250,9 +249,9 @@ const handleBlockDelete = async () => {
 };
 
 const buildSchedule = () => {
-  if (!showBlockSchedule.value) return null;
+  if (!showBlockSchedule.value) return undefined;
   if (blockScheduleType.value === "fixed") {
-    if (!scheduleDate.value) return null;
+    if (!scheduleDate.value) return undefined;
     return {
       type: "fixed",
       date: scheduleDate.value + (scheduleTime.value ? "T" + scheduleTime.value : ""),
@@ -260,7 +259,7 @@ const buildSchedule = () => {
     };
   }
   if (blockScheduleType.value === "interval") {
-    if (!scheduleIntervalHours.value) return null;
+    if (!scheduleIntervalHours.value) return undefined;
     const startDateValue = scheduleStartDate.value
       ? new Date(
           scheduleStartDate.value +
@@ -275,14 +274,14 @@ const buildSchedule = () => {
     };
   }
   if (blockScheduleType.value === "weekly") {
-    if (scheduleDays.value.length === 0) return null;
+    if (scheduleDays.value.length === 0) return undefined;
     return {
       type: "weekly",
       daysOfWeek: scheduleDays.value,
       time: scheduleTime.value || undefined,
     };
   }
-  return null;
+  return undefined;
 };
 
 const toggleDay = (day: string) => {
