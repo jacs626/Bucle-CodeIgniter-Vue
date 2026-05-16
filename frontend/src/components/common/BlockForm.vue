@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import type { Block } from '@/types'
+import { useSchedule } from '@/composables/useSchedule'
 
 export interface MetaFieldDefinition {
   key: string
@@ -25,18 +26,23 @@ const name = ref(props.block?.name ?? '')
 const metaValues = ref<Record<string, unknown>>({})
 const metaFields = ref<MetaFieldDefinition[]>([])
 
-const scheduleExpanded = ref(!!props.block?.schedule)
-const scheduleType = ref<'fixed' | 'interval' | 'weekly'>(props.block?.schedule?.type ?? 'fixed')
-const scheduleDate = ref('')
-const scheduleTime = ref(props.block?.schedule?.time ?? '')
-const scheduleIntervalHours = ref(props.block?.schedule?.intervalHours?.toString() ?? '')
-const scheduleStartDate = ref('')
-const scheduleStartTime = ref('')
-const scheduleDays = ref<string[]>(props.block?.schedule?.daysOfWeek ?? [])
-
 const workflowSteps = ref<{ title: string; description: string }[]>([
   { title: '', description: '' }
 ])
+
+const {
+  scheduleExpanded,
+  scheduleType,
+  scheduleDate,
+  scheduleTime,
+  scheduleIntervalHours,
+  scheduleStartDate,
+  scheduleStartTime,
+  scheduleDays,
+  buildSchedule,
+  loadSchedule,
+  toggleDay,
+} = useSchedule()
 
 const isEditing = computed(() => !!props.block)
 const blockTypes = [
@@ -54,13 +60,7 @@ watch(() => props.block, (newBlock) => {
       metaValues.value = { ...newBlock.data } as Record<string, unknown>
       initMetaFields()
     }
-    if (newBlock.schedule) {
-      scheduleExpanded.value = true
-      scheduleType.value = newBlock.schedule.type ?? 'fixed'
-      scheduleTime.value = newBlock.schedule.time ?? ''
-      scheduleIntervalHours.value = newBlock.schedule.intervalHours?.toString() ?? ''
-      scheduleDays.value = newBlock.schedule.daysOfWeek ?? []
-    }
+    loadSchedule(newBlock.schedule ?? undefined)
     if (newBlock.type === 'workflow' && Array.isArray(newBlock.data?.steps)) {
       workflowSteps.value = newBlock.data.steps as { title: string; description: string }[]
     }
@@ -175,33 +175,7 @@ const removeWorkflowStep = (index: number) => {
 const updateWorkflowStep = (index: number, field: 'title' | 'description', value: string) => {
   const updated = [...workflowSteps.value]
   updated[index] = { ...updated[index], [field]: value }
-  workflowSteps.value = updated
-}
-
-const buildSchedule = () => {
-  if (!scheduleExpanded.value) return undefined
-  if (scheduleType.value === 'fixed') {
-    if (!scheduleDate.value) return undefined
-    return { type: 'fixed' as const, date: scheduleDate.value + (scheduleTime.value ? 'T' + scheduleTime.value : ''), time: scheduleTime.value || undefined }
-  }
-  if (scheduleType.value === 'interval') {
-    if (!scheduleIntervalHours.value) return undefined
-    const startDateValue = scheduleStartDate.value ? new Date(scheduleStartDate.value + (scheduleStartTime.value ? 'T' + scheduleStartTime.value : ':00')).toISOString() : undefined
-    return { type: 'interval' as const, intervalHours: parseInt(scheduleIntervalHours.value), startDate: startDateValue, time: scheduleTime.value || undefined }
-  }
-  if (scheduleType.value === 'weekly') {
-    if (scheduleDays.value.length === 0) return undefined
-    return { type: 'weekly' as const, daysOfWeek: scheduleDays.value, time: scheduleTime.value || undefined }
-  }
-  return undefined
-}
-
-const toggleDay = (day: string) => {
-  if (scheduleDays.value.includes(day)) {
-    scheduleDays.value = scheduleDays.value.filter(d => d !== day)
-  } else {
-    scheduleDays.value = [...scheduleDays.value, day]
-  }
+workflowSteps.value = updated
 }
 
 const handleSubmit = () => {

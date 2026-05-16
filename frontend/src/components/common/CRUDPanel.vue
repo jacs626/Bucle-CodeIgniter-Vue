@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import type { Category, Entity, Block, MetaFieldDefinition } from "@/types";
 import { useToast } from "@/composables/useToast";
 import { useCategoriesStore } from "@/stores/categoriesStore";
 import { useEntitiesStore } from "@/stores/entitiesStore";
 import { useBlocksStore } from "@/stores/blocksStore";
+import { useSchedule } from "@/composables/useSchedule";
 import MetaFieldsEditor from "./MetaFieldsEditor.vue";
 
 interface Props {
@@ -56,17 +57,23 @@ const blockFormData = ref({
 });
 const blockMetaFields = ref<MetaFieldDefinition[]>([]);
 
-const showBlockSchedule = ref(false);
-const blockScheduleType = ref<"fixed" | "interval" | "weekly">("fixed");
-const scheduleDate = ref("");
-const scheduleTime = ref("");
-const scheduleIntervalHours = ref("");
-const scheduleStartDate = ref("");
-const scheduleStartTime = ref("");
-const scheduleDays = ref<string[]>([]);
 const workflowSteps = ref<{ title: string; description: string }[]>([
   { title: "", description: "" },
 ]);
+
+const {
+  scheduleExpanded,
+  scheduleType,
+  scheduleDate,
+  scheduleTime,
+  scheduleIntervalHours,
+  scheduleStartDate,
+  scheduleStartTime,
+  scheduleDays,
+  buildSchedule,
+  loadSchedule,
+  toggleDay,
+} = useSchedule();
 
 watch(
   () => props.editingCategory,
@@ -90,6 +97,7 @@ watch(
         data: (block.data as Record<string, unknown>) || {},
         schedule: block.schedule,
       };
+      loadSchedule(block.schedule ?? undefined);
       activeTab.value = "block";
     }
   },
@@ -245,50 +253,6 @@ const handleBlockDelete = async () => {
     closePanel();
   } catch {
     showMessage("error", "Error al eliminar bloque");
-  }
-};
-
-const buildSchedule = () => {
-  if (!showBlockSchedule.value) return undefined;
-  if (blockScheduleType.value === "fixed") {
-    if (!scheduleDate.value) return undefined;
-    return {
-      type: "fixed",
-      date: scheduleDate.value + (scheduleTime.value ? "T" + scheduleTime.value : ""),
-      time: scheduleTime.value || undefined,
-    };
-  }
-  if (blockScheduleType.value === "interval") {
-    if (!scheduleIntervalHours.value) return undefined;
-    const startDateValue = scheduleStartDate.value
-      ? new Date(
-          scheduleStartDate.value +
-            (scheduleStartTime.value ? "T" + scheduleStartTime.value + ":00" : ""),
-        ).toISOString()
-      : undefined;
-    return {
-      type: "interval",
-      intervalHours: parseInt(scheduleIntervalHours.value),
-      startDate: startDateValue,
-      time: scheduleTime.value || undefined,
-    };
-  }
-  if (blockScheduleType.value === "weekly") {
-    if (scheduleDays.value.length === 0) return undefined;
-    return {
-      type: "weekly",
-      daysOfWeek: scheduleDays.value,
-      time: scheduleTime.value || undefined,
-    };
-  }
-  return undefined;
-};
-
-const toggleDay = (day: string) => {
-  if (scheduleDays.value.includes(day)) {
-    scheduleDays.value = scheduleDays.value.filter((d) => d !== day);
-  } else {
-    scheduleDays.value = [...scheduleDays.value, day];
   }
 };
 
@@ -673,29 +637,29 @@ const blockTypes = [
         <div class="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl">
           <button
             type="button"
-            @click="showBlockSchedule = !showBlockSchedule"
+            @click="scheduleExpanded = !scheduleExpanded"
             class="flex items-center gap-2 text-sm font-semibold"
-            :class="showBlockSchedule ? 'text-emerald-600' : 'text-amber-600'"
+            :class="scheduleExpanded ? 'text-emerald-600' : 'text-amber-600'"
           >
-            <span>{{ showBlockSchedule ? "✓" : "+" }}</span>
+            <span>{{ scheduleExpanded ? "✓" : "+" }}</span>
             <span>Programación</span>
             <span
-              v-if="showBlockSchedule"
+              v-if="scheduleExpanded"
               class="px-2 py-0.5 bg-emerald-500 text-white text-xs rounded-full"
               >ACTIVA</span
             >
           </button>
 
-          <div v-if="showBlockSchedule" class="mt-3 space-y-3">
+          <div v-if="scheduleExpanded" class="mt-3 space-y-3">
             <select
-              v-model="blockScheduleType"
+              v-model="scheduleType"
               class="w-full px-3 py-2 text-sm border rounded-xl bg-white dark:bg-slate-800"
             >
               <option value="fixed">Fecha específica</option>
               <option value="interval">Cada X horas</option>
               <option value="weekly">Días de la semana</option>
             </select>
-            <div v-if="blockScheduleType === 'fixed'" class="grid grid-cols-2 gap-2">
+            <div v-if="scheduleType === 'fixed'" class="grid grid-cols-2 gap-2">
               <input
                 type="date"
                 v-model="scheduleDate"
@@ -707,7 +671,7 @@ const blockTypes = [
                 class="px-3 py-2 text-sm border rounded-xl bg-white dark:bg-slate-800"
               />
             </div>
-            <div v-if="blockScheduleType === 'interval'" class="space-y-2">
+            <div v-if="scheduleType === 'interval'" class="space-y-2">
               <input
                 type="number"
                 v-model="scheduleIntervalHours"

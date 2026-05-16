@@ -13,7 +13,7 @@ const isLoading = ref(true)
 const stats = computed(() => ({
   categories: 0,
   entities: entitiesStore.entityCount,
-  blocks: blocksStore.blocksCount,
+  blocks: blocksStore.blockCount,
   documents: 0,
 }))
 

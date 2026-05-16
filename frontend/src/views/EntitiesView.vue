@@ -4,6 +4,7 @@ import { useEntitiesStore } from '@/stores/entitiesStore'
 import { useCategoriesStore } from '@/stores/categoriesStore'
 import { useToast } from '@/composables/useToast'
 import type { Entity } from '@/types'
+import { getTypeIcon } from '@/utils/formatters'
 import EntityForm from '@/components/common/EntityForm.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 
@@ -25,15 +26,6 @@ const getCategoryName = (categoryId: number | null) => {
   if (!categoryId) return '-'
   const category = categoriesStore.categories.find(c => c.id === categoryId)
   return category?.name || '-'
-}
-
-const getTypeIcon = (type: string) => {
-  switch (type) {
-    case 'company': return '🏢'
-    case 'project': return '📁'
-    case 'client': return '👤'
-    default: return '📋'
-  }
 }
 
 const handleSubmit = async (data: any) => {

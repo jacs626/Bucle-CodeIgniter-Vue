@@ -4,6 +4,7 @@ import { useBlocksStore } from "@/stores/blocksStore";
 import { useEntitiesStore } from "@/stores/entitiesStore";
 import { useToast } from "@/composables/useToast";
 import type { Block } from "@/types";
+import { getTypeIcon } from "@/utils/formatters";
 import BlockForm from "@/components/common/BlockForm.vue";
 import StatusBadge from "@/components/common/StatusBadge.vue";
 
@@ -55,21 +56,6 @@ const openCreate = () => {
 const openEdit = (block: Block) => {
   editingBlock.value = block;
   showForm.value = true;
-};
-
-const getTypeIcon = (type: string) => {
-  switch (type) {
-    case "payment":
-      return "💰";
-    case "reminder":
-      return "🔔";
-    case "workflow":
-      return "📋";
-    case "task":
-      return "✓";
-    default:
-      return "🧱";
-  }
 };
 
 onMounted(async () => {

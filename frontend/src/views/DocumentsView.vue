@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useDocumentsStore } from '@/stores/documentsStore'
+import { formatFileSize, getFileIcon } from '@/utils/formatters'
 
 const documentsStore = useDocumentsStore()
 const isLoading = ref(true)
@@ -14,24 +15,6 @@ const filteredDocuments = computed(() => {
     (doc.title as string)?.toLowerCase().includes(query)
   )
 })
-
-const formatFileSize = (bytes: number): string => {
-  if (!bytes || bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
-
-const getFileIcon = (fileType: string | undefined) => {
-  if (!fileType) return '📄'
-  const type = fileType.toLowerCase()
-  if (type.includes('pdf')) return '📕'
-  if (type.includes('image') || type.includes('png') || type.includes('jpg')) return '🖼️'
-  if (type.includes('doc') || type.includes('word')) return '📘'
-  if (type.includes('sheet') || type.includes('excel')) return '📗'
-  return '📄'
-}
 
 const handleUploadClick = () => {
   const input = document.createElement('input')
