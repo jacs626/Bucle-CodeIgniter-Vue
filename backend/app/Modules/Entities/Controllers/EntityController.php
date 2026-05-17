@@ -99,4 +99,19 @@ class EntityController extends ResourceController
             'message' => 'Entidad eliminada correctamente',
         ]);
     }
+
+    public function getByCategory($categoryId = null)
+    {
+        if (!$categoryId) {
+            return $this->failValidationErrors(['category_id' => 'El ID de categoría es requerido']);
+        }
+
+        $entities = $this->service->getByCategory((int) $categoryId);
+
+        return $this->respond([
+            'status' => 'success',
+            'message' => 'Entidades obtenidas por categoría',
+            'data' => $entities,
+        ]);
+    }
 }

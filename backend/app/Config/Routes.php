@@ -23,6 +23,7 @@ $routes->group('api', ['namespace' => 'App\Modules\Categories\Controllers'], fun
 $routes->group('api', ['namespace' => 'App\Modules\Entities\Controllers'], function ($routes) {
     $routes->get('entities', 'EntityController::index');
     $routes->get('entities/(:num)', 'EntityController::show/$1');
+    $routes->get('entities/category/(:num)', 'EntityController::getByCategory/$1');
     $routes->post('entities', 'EntityController::create');
     $routes->put('entities/(:num)', 'EntityController::update/$1');
     $routes->delete('entities/(:num)', 'EntityController::delete/$1');

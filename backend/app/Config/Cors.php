@@ -25,8 +25,22 @@ class Cors extends BaseConfig
      *  }
      */
     public array $default = [
-        'allowedOrigins' => ['http://localhost:5173', 'http://localhost:3000'],
-        'allowedOriginsPatterns' => [],
+        'allowedOrigins' => [
+            'http://localhost:5173',   // Vue frontend
+            'http://localhost:3000',   // Vue alternate
+            'http://localhost:8081',   // Expo web
+            'http://localhost:8082',   // Expo alternate
+            'exp://localhost:8081',    // Expo app (Android)
+            'exp://localhost:8082',    // Expo app alternate
+            'http://127.0.0.1:8081',   // Expo localhost
+            'http://127.0.0.1:8082',   // Expo alternate
+        ],
+        // Para desarrollo: permite cualquier origen localhost
+        'allowedOriginsPatterns' => [
+            'http://localhost:*',
+            'http://127.0.0.1:*',
+            'exp://*',
+        ],
         'supportsCredentials' => true,
         'allowedHeaders' => ['Content-Type', 'Authorization', 'X-Requested-With'],
         'exposedHeaders' => [],

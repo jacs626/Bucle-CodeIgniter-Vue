@@ -105,6 +105,13 @@ class EntityService
         return $this->transformer->transformCollection($entities);
     }
 
+    public function getByCategory(int $categoryId): array
+    {
+        $entities = $this->entityModel->where('category_id', $categoryId)->findAll();
+
+        return $this->transformer->transformCollection($entities);
+    }
+
     protected function prepareData(array $data): array
     {
         $prepared = [];
